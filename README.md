@@ -4,6 +4,8 @@ A dynamic Obsidian plugin integrating ChatGPT directly within your notes. It sim
 
 ![](./assets/smart-chatgpt-getting_started.gif)
 
+[Guide to Getting Started](https://docs.smartconnections.app/Smart-ChatGPT/Getting-Started).
+
 ## Features
 - **Smart ChatGPT Codeblocks** (`smart-chatgpt`)
   - Insert ChatGPT sessions directly in notes.
