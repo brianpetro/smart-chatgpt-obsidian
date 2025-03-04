@@ -164,13 +164,7 @@ export default class SmartChatgptPlugin extends Plugin {
       id: 'insert-smart-chatgpt-codeblock',
       name: 'Insert Smart ChatGPT Codeblock',
       editorCallback: (editor) => {
-        let content = '';
-        const prefix = this.settings.prefix_heading;
-        if (prefix && prefix.trim() !== '') {
-          content += prefix + '\n';
-        }
-        content += '```smart-chatgpt\n```\n';
-        editor.replaceSelection(content);
+        editor.replaceSelection('```smart-chatgpt\n```\n');
       }
     });
   }
