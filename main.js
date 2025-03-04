@@ -1,16 +1,3 @@
-/**
- * @file main.js
- * @description Main entrypoint for the "Smart ChatGPT" Obsidian Plugin (ESM).
- *
- * Registers:
- * 1) A new ItemView (SmartChatGPTView).
- * 2) A command to open that view.
- * 3) A command to insert a "smart-chatgpt" codeblock in the active editor.
- * 4) A settings tab with 'iframe_height', 'zoom_factor', and 'prefix_heading'.
- * 5) A markdown codeblock processor for "smart-chatgpt", delegated to
- *    SmartChatgptCodeblock.
- */
-
 import { Plugin, Notice, TFile, PluginSettingTab, Setting } from 'obsidian';
 import { SmartChatgptCodeblock } from './smart_chatgpt_codeblock.js';
 
@@ -33,7 +20,6 @@ const DEFAULT_SETTINGS = {
  * A settings tab for the SmartChatgptPlugin. Includes:
  * - numeric field for 'iframe_height'
  * - slider for 'zoom_factor'
- * - text input for 'prefix_heading'
  */
 class SmartChatgptSettingTab extends PluginSettingTab {
   /**
