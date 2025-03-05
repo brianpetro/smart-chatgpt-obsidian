@@ -103,67 +103,73 @@ export class SmartChatgptCodeblock {
     this.current_url = this.initial_link;
 
     // Build layout
-    const top_row_el = this.container_el.createEl('div', { cls: 'sc-top-row' });
-    top_row_el.style.display = 'flex';
-    top_row_el.style.gap = '8px';
-    top_row_el.style.marginBottom = '8px';
-    top_row_el.style.alignItems = 'center';
+    const top_row_el = this.container_el?.createEl('div', { cls: 'sc-top-row' });
+    if (top_row_el) {
+      top_row_el.style.display = 'flex';
+      top_row_el.style.gap = '8px';
+      top_row_el.style.marginBottom = '8px';
+      top_row_el.style.alignItems = 'center';
+    }
 
-    if (this.links.length > 1) {
+    if (this.links.length > 0 && top_row_el) {
       this._build_dropdown(top_row_el);
     }
 
-    this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
-    this.mark_done_button_el.style.display = 'none';
+    if (top_row_el) {
+      this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
+      this.mark_done_button_el.style.display = 'none';
 
-    this.status_text_el = top_row_el.createEl('span', { text: '' });
-    this.status_text_el.style.marginLeft = 'auto';
+      this.status_text_el = top_row_el.createEl('span', { text: '' });
+      this.status_text_el.style.marginLeft = 'auto';
+    }
 
-    const webview_height = this.plugin.settings.iframe_height || 800;
-    this.webview_el = this.container_el.createEl('webview');
-    this.webview_el.setAttribute(
-      'partition',
-      'persist:smart-chatgpt-' + this.plugin.app.vault.getName()
-    );
-    this.webview_el.setAttribute('allowpopups', '');
-    this._init_navigation_events();
+    if (this.container_el) {
+      const webview_height = this.plugin.settings.iframe_height || 800;
+      this.webview_el = this.container_el.createEl('webview');
+      this.webview_el.setAttribute(
+        'partition',
+        'persist:smart-chatgpt-' + this.plugin.app.vault.getName()
+      );
+      this.webview_el.setAttribute('allowpopups', '');
+      this._init_navigation_events();
 
-    this.webview_el.style.width = '100%';
-    this.webview_el.style.height = webview_height + 'px';
-    this.webview_el.setAttribute('src', this.initial_link);
+      this.webview_el.style.width = '100%';
+      this.webview_el.style.height = webview_height + 'px';
+      this.webview_el.setAttribute('src', this.initial_link);
 
-    this.webview_el.addEventListener('dom-ready', () => {
-      const factor = this.plugin.settings.zoom_factor || 1.0;
-      this.webview_el.setZoomFactor(factor);
-    });
+      this.webview_el.addEventListener('dom-ready', () => {
+        const factor = this.plugin.settings.zoom_factor || 1.0;
+        this.webview_el.setZoomFactor(factor);
+      });
 
-    const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
-    bottom_row_el.style.display = 'flex';
-    bottom_row_el.style.gap = '8px';
-    bottom_row_el.style.marginTop = '8px';
+      const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
+      bottom_row_el.style.display = 'flex';
+      bottom_row_el.style.gap = '8px';
+      bottom_row_el.style.marginTop = '8px';
 
-    this.refresh_button_el = bottom_row_el.createEl('button', { text: 'Refresh' });
-    this.refresh_button_el.addEventListener('click', () => {
-      if (this.webview_el) {
-        this.webview_el.reload();
-        this.plugin.notices.show('Webview reloaded.');
-      }
-    });
+      this.refresh_button_el = bottom_row_el.createEl('button', { text: 'Refresh' });
+      this.refresh_button_el.addEventListener('click', () => {
+        if (this.webview_el) {
+          this.webview_el.reload();
+          this.plugin.notices.show('Webview reloaded.');
+        }
+      });
 
-    this.open_browser_button_el = bottom_row_el.createEl('button', { text: 'Open in Browser' });
-    this.open_browser_button_el.addEventListener('click', () => {
-      if (this.current_url && this.current_url.startsWith('http')) {
-        window.open(this.current_url, '_blank');
-      }
-    });
+      this.open_browser_button_el = bottom_row_el.createEl('button', { text: 'Open in Browser' });
+      this.open_browser_button_el.addEventListener('click', () => {
+        if (this.current_url && this.current_url.startsWith('http')) {
+          window.open(this.current_url, '_blank');
+        }
+      });
 
-    this.copy_link_button_el = bottom_row_el.createEl('button', { text: 'Copy Link' });
-    this.copy_link_button_el.addEventListener('click', () => {
-      if (this.current_url && this.current_url.startsWith('http')) {
-        navigator.clipboard.writeText(this.current_url);
-        this.plugin.notices.show('Copied current URL to clipboard.');
-      }
-    });
+      this.copy_link_button_el = bottom_row_el.createEl('button', { text: 'Copy Link' });
+      this.copy_link_button_el.addEventListener('click', () => {
+        if (this.current_url && this.current_url.startsWith('http')) {
+          navigator.clipboard.writeText(this.current_url);
+          this.plugin.notices.show('Copied current URL to clipboard.');
+        }
+      });
+    }
 
     this._render_save_ui(this.initial_link);
   }
@@ -249,6 +255,8 @@ export class SmartChatgptCodeblock {
   }
 
   _init_navigation_events() {
+    if (!this.webview_el) return;
+
     this.webview_el.addEventListener('did-finish-load', () => {
       this.webview_el.setAttribute('data-did-finish-load', 'true');
     });
@@ -272,9 +280,10 @@ export class SmartChatgptCodeblock {
 
     // Always auto-save if it's a new thread link
     if (this._is_thread_link(new_url)) {
-      const already_saved = await this._check_if_saved(new_url);
+      const link_to_save = this._normalize_url(new_url);
+      const already_saved = await this._check_if_saved(link_to_save);
       if (!already_saved) {
-        await this._insert_link_into_codeblock(new_url);
+        await this._insert_link_into_codeblock(link_to_save);
         this.plugin.notices.show('Auto-saved new ChatGPT thread link.');
       }
     }
@@ -313,9 +322,10 @@ export class SmartChatgptCodeblock {
       return;
     }
 
-    const is_done = await this._check_if_done(url);
+    const link_to_check = this._normalize_url(url);
+    const is_done = await this._check_if_done(link_to_check);
 
-    // Already saved
+    // Already saved as done
     if (is_done) {
       this._set_status_text('This thread is marked done.');
       return;
@@ -324,11 +334,13 @@ export class SmartChatgptCodeblock {
     // Saved but not done => show "Mark Done"
     this._set_status_text('');
     this._show_mark_done_button();
-    this.mark_done_button_el.onclick = async () => {
-      await this._mark_thread_done_in_codeblock(url);
-      this.plugin.notices.show('Marked thread as done.');
-      this._render_save_ui(this.current_url);
-    };
+    if (this.mark_done_button_el) {
+      this.mark_done_button_el.onclick = async () => {
+        await this._mark_thread_done_in_codeblock(link_to_check);
+        this.plugin.notices.show('Marked thread as done.');
+        this._render_save_ui(this.current_url);
+      };
+    }
   }
 
   _set_status_text(text) {
@@ -347,7 +359,6 @@ export class SmartChatgptCodeblock {
       this.mark_done_button_el.style.display = 'none';
     }
   }
-
 
   async _check_if_saved(url) {
     if (!this.file) return false;
@@ -459,13 +470,13 @@ export class SmartChatgptCodeblock {
     // find next undone
     const nextUrl = this._find_next_undone_url(new_data, start, end, doneLineIndex);
     if (nextUrl) {
-      this.webview_el.setAttribute('src', nextUrl);
+      this.webview_el?.setAttribute('src', nextUrl);
       this.current_url = nextUrl;
       return;
     }
 
     // none undone -> root
-    this.webview_el.setAttribute('src', 'https://chatgpt.com');
+    this.webview_el?.setAttribute('src', 'https://chatgpt.com');
     this.current_url = 'https://chatgpt.com';
   }
 
