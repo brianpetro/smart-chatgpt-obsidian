@@ -13,7 +13,7 @@ import { SmartChatgptCodeblock } from './smart_chatgpt_codeblock.js';
  */
 const DEFAULT_SETTINGS = {
   iframe_height: 800,
-  zoom_factor: 0.9,
+  zoom_factor: 0.9
 };
 
 /**
@@ -63,7 +63,7 @@ class SmartChatgptSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.zoom_factor = value;
             await this.plugin.saveSettings();
-            this.display(); // refresh UI
+            this.display(); // refresh UI to update displayed value
           });
       })
       .addExtraButton(cb => {
@@ -81,7 +81,6 @@ class SmartChatgptSettingTab extends PluginSettingTab {
         });
         previewEl.style.marginTop = '5px';
       });
-
   }
 }
 
@@ -96,8 +95,7 @@ export default class SmartChatgptPlugin extends Plugin {
    * @type {Object}
    */
   smart_env_config = {
-    collections: {
-    }
+    collections: {}
   };
 
   /**
@@ -111,11 +109,7 @@ export default class SmartChatgptPlugin extends Plugin {
     };
 
     await this.loadSettings();
-    
-    // Register everything
     this.register_all();
-    
-    // Add settings tab
     this.addSettingTab(new SmartChatgptSettingTab(this.app, this));
   }
 
@@ -148,7 +142,7 @@ export default class SmartChatgptPlugin extends Plugin {
   register_commands() {
     this.addCommand({
       id: 'insert-smart-chatgpt-codeblock',
-      name: 'Insert Smart ChatGPT Codeblock',
+      name: 'Insert ChatGPT codeblock',
       editorCallback: (editor) => {
         editor.replaceSelection('```smart-chatgpt\n```\n');
       }

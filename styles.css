@@ -1,17 +1,47 @@
-/* styles */
-.button-container {
+/* Make .button-container more specific */
+.sc-button-container {
   margin-bottom: 10px;
 }
 
+/* Codeblock container border and padding */
 .sc-dynamic-codeblock {
   border: 1px solid var(--color-border);
   padding: 8px;
   margin: 8px 0;
 }
 
-.smart-chatgpt .view-content {
+/* Layout for the top row of codeblock UI */
+.sc-top-row {
   display: flex;
-  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+/* Layout for the bottom row of codeblock UI */
+.sc-bottom-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Status text on top row */
+.sc-status-text {
+  margin-left: auto;
+}
+
+/* A hidden element class for toggling display. */
+.sc-hidden {
+  display: none;
+}
+
+/* The embedded ChatGPT webview. Use a custom property for height. */
+.sc-webview {
   width: 100%;
-  height: 100%;
+  height: var(--sc-webview-height, 800px);
+}
+
+/* Link dropdown styling if needed */
+.sc-link-dropdown {
+  max-width: 300px;
 }

@@ -16,11 +16,9 @@ export class SmartChatgptCodeblock {
     this.container_el = container_el;
     this.source = source;
 
-    // We'll store links with done-ness.
     this.link_regex = /(https?:\/\/[^\s]+)/g;
     this.links = this._extract_links(this.source);
 
-    // Pick the first not-done link if any, else fallback
     const not_done_link_obj = this.links.find(obj => !obj.done);
     this.initial_link = not_done_link_obj
       ? not_done_link_obj.url
@@ -35,7 +33,6 @@ export class SmartChatgptCodeblock {
     this.mark_done_button_el = null;
     this.status_text_el = null;
     this.webview_el = null;
-
     this.refresh_button_el = null;
     this.open_browser_button_el = null;
     this.copy_link_button_el = null;
@@ -56,7 +53,6 @@ export class SmartChatgptCodeblock {
 
     for (const line of lines) {
       const trimmed = line.trim();
-
       if (trimmed.startsWith('chat-done:: ')) {
         const tokens = trimmed.split(/\s+/);
         const possibleUrl = tokens[tokens.length - 1];
@@ -86,67 +82,61 @@ export class SmartChatgptCodeblock {
    * Called once by our codeblock processor to build the UI.
    */
   async build() {
-    // 1) Force lines with bare links to get "chat-active:: " prefix
+    // 1) Force lines with bare links to get chat-active prefix if missing
     await this._prefix_missing_lines_in_file();
 
-    // 2) Re-read the updated codeblock text
+    // 2) Re-read updated codeblock text
     const updated_source = await this._get_codeblock_source_from_file();
     if (updated_source) {
       this.source = updated_source;
     }
 
-    // 3) Parse final links
+    // 3) Final link parse
     this.links = this._extract_links(this.source);
     const not_done_link_obj = this.links.find(obj => !obj.done);
-    this.initial_link = not_done_link_obj ? not_done_link_obj.url : 'https://chatgpt.com/';
+    this.initial_link = not_done_link_obj
+      ? not_done_link_obj.url
+      : 'https://chatgpt.com/';
     this.last_detected_url = this.initial_link;
     this.current_url = this.initial_link;
 
     // Build layout
+
+    // top row
     const top_row_el = this.container_el?.createEl('div', { cls: 'sc-top-row' });
-    if (top_row_el) {
-      top_row_el.style.display = 'flex';
-      top_row_el.style.gap = '8px';
-      top_row_el.style.marginBottom = '8px';
-      top_row_el.style.alignItems = 'center';
-    }
 
     if (this.links.length > 0 && top_row_el) {
       this._build_dropdown(top_row_el);
     }
-
     if (top_row_el) {
-      this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
-      this.mark_done_button_el.style.display = 'none';
-
-      this.status_text_el = top_row_el.createEl('span', { text: '' });
-      this.status_text_el.style.marginLeft = 'auto';
+      this.mark_done_button_el = top_row_el.createEl('button', {
+        text: 'Mark done',
+        cls: 'sc-mark-done-button sc-hidden' // default hidden
+      });
+      this.status_text_el = top_row_el.createEl('span', { cls: 'sc-status-text' });
     }
 
+    // webview
     if (this.container_el) {
-      const webview_height = this.plugin.settings.iframe_height || 800;
-      this.webview_el = this.container_el.createEl('webview');
-      this.webview_el.setAttribute(
-        'partition',
-        'persist:smart-chatgpt-' + this.plugin.app.vault.getName()
-      );
+      this.webview_el = this.container_el.createEl('webview', {
+        cls: 'sc-webview'
+      });
+      this.webview_el.setAttribute('partition', 'persist:smart-chatgpt-' + this.plugin.app.vault.getName());
       this.webview_el.setAttribute('allowpopups', '');
       this._init_navigation_events();
 
-      this.webview_el.style.width = '100%';
-      this.webview_el.style.height = webview_height + 'px';
-      this.webview_el.setAttribute('src', this.initial_link);
+      // Use a custom property in CSS to handle dynamic height
+      const webview_height = this.plugin.settings.iframe_height || 800;
+      this.webview_el.style.setProperty('--sc-webview-height', webview_height + 'px');
 
+      this.webview_el.setAttribute('src', this.initial_link);
       this.webview_el.addEventListener('dom-ready', () => {
         const factor = this.plugin.settings.zoom_factor || 1.0;
         this.webview_el.setZoomFactor(factor);
       });
 
+      // bottom row
       const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
-      bottom_row_el.style.display = 'flex';
-      bottom_row_el.style.gap = '8px';
-      bottom_row_el.style.marginTop = '8px';
-
       this.refresh_button_el = bottom_row_el.createEl('button', { text: 'Refresh' });
       this.refresh_button_el.addEventListener('click', () => {
         if (this.webview_el) {
@@ -155,14 +145,14 @@ export class SmartChatgptCodeblock {
         }
       });
 
-      this.open_browser_button_el = bottom_row_el.createEl('button', { text: 'Open in Browser' });
+      this.open_browser_button_el = bottom_row_el.createEl('button', { text: 'Open in browser' });
       this.open_browser_button_el.addEventListener('click', () => {
         if (this.current_url && this.current_url.startsWith('http')) {
           window.open(this.current_url, '_blank');
         }
       });
 
-      this.copy_link_button_el = bottom_row_el.createEl('button', { text: 'Copy Link' });
+      this.copy_link_button_el = bottom_row_el.createEl('button', { text: 'Copy link' });
       this.copy_link_button_el.addEventListener('click', () => {
         if (this.current_url && this.current_url.startsWith('http')) {
           navigator.clipboard.writeText(this.current_url);
@@ -175,14 +165,13 @@ export class SmartChatgptCodeblock {
   }
 
   /**
-   * Reads the entire file, identifies our codeblock boundaries,
-   * returns just the lines inside the codeblock as a single string.
+   * Reads the entire file, returns just the lines inside our codeblock.
    */
   async _get_codeblock_source_from_file() {
     if (!this.file) return null;
     try {
       const raw_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(raw_data);
+      const [start, end] = this._find_codeblock_boundaries(raw_data);
       if (start < 0 || end < 0 || end <= start) return null;
       const lines = raw_data.split('\n').slice(start + 1, end);
       return lines.join('\n');
@@ -193,27 +182,20 @@ export class SmartChatgptCodeblock {
   }
 
   /**
-   * Ensures that any line with at least one link but which does not start
-   * with "chat-active:: " or "chat-done:: " is prefixed with:
-   *   "chat-active:: <timestamp> <existing line>"
-   * Then writes those changes back to the file if needed.
+   * Ensures lines with bare links become "chat-active:: " lines
    */
   async _prefix_missing_lines_in_file() {
     if (!this.file) return;
-    try {
-      const file_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(file_data);
-      if (start < 0 || end < 0) return;
+    await this.plugin.app.vault.process(this.file, (file_data) => {
+      const [start, end] = this._find_codeblock_boundaries(file_data);
+      if (start < 0 || end < 0) return file_data;
 
       const lines = file_data.split('\n');
       let changed = false;
       for (let i = start + 1; i < end; i++) {
         const line = lines[i];
         const trimmed = line.trim();
-        if (
-          trimmed.startsWith('chat-active:: ') ||
-          trimmed.startsWith('chat-done:: ')
-        ) {
+        if (trimmed.startsWith('chat-active:: ') || trimmed.startsWith('chat-done:: ')) {
           continue;
         }
         const found = line.match(this.link_regex) || [];
@@ -223,21 +205,15 @@ export class SmartChatgptCodeblock {
           changed = true;
         }
       }
-
-      if (changed) {
-        const new_data = lines.join('\n');
-        await this.plugin.app.vault.modify(this.file, new_data);
-      }
-    } catch (err) {
-      console.error('Error prefixing lines in file:', err);
-    }
+      return changed ? lines.join('\n') : file_data;
+    });
   }
 
   /**
    * Creates a dropdown for links, labeling done ones with "✓".
    */
   _build_dropdown(parent_el) {
-    this.dropdown_el = parent_el.createEl('select');
+    this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
     for (const link_obj of this.links) {
       const option_el = this.dropdown_el.createEl('option');
       option_el.value = link_obj.url;
@@ -256,7 +232,6 @@ export class SmartChatgptCodeblock {
 
   _init_navigation_events() {
     if (!this.webview_el) return;
-
     this.webview_el.addEventListener('did-finish-load', () => {
       this.webview_el.setAttribute('data-did-finish-load', 'true');
     });
@@ -278,7 +253,7 @@ export class SmartChatgptCodeblock {
     this.last_detected_url = new_url;
     this.current_url = new_url;
 
-    // Always auto-save if it's a new thread link
+    // Auto-save new thread link
     if (this._is_thread_link(new_url)) {
       const link_to_save = this._normalize_url(new_url);
       const already_saved = await this._check_if_saved(link_to_save);
@@ -306,7 +281,7 @@ export class SmartChatgptCodeblock {
   }
 
   /**
-   * Show/hide the correct UI for "save link" or "mark done" or "already done."
+   * Show/hide the correct UI for "mark done" or "already done".
    * @param {string} url
    */
   async _render_save_ui(url) {
@@ -331,8 +306,7 @@ export class SmartChatgptCodeblock {
       return;
     }
 
-    // Saved but not done => show "Mark Done"
-    this._set_status_text('');
+    // Not done => show "Mark done"
     this._show_mark_done_button();
     if (this.mark_done_button_el) {
       this.mark_done_button_el.onclick = async () => {
@@ -351,12 +325,13 @@ export class SmartChatgptCodeblock {
 
   _show_mark_done_button() {
     if (this.mark_done_button_el) {
-      this.mark_done_button_el.style.display = '';
+      this.mark_done_button_el.classList.remove('sc-hidden');
     }
   }
+
   _hide_mark_done_button() {
     if (this.mark_done_button_el) {
-      this.mark_done_button_el.style.display = 'none';
+      this.mark_done_button_el.classList.add('sc-hidden');
     }
   }
 
@@ -364,16 +339,13 @@ export class SmartChatgptCodeblock {
     if (!this.file) return false;
     try {
       const raw_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(raw_data);
+      const [start, end] = this._find_codeblock_boundaries(raw_data);
       if (start < 0 || end < 0 || end <= start) return false;
 
       const lines = raw_data.split('\n').slice(start + 1, end);
       for (const line of lines) {
         const trimmed = line.trim();
-        if (
-          trimmed.startsWith('chat-active:: ') ||
-          trimmed.startsWith('chat-done:: ')
-        ) {
+        if (trimmed.startsWith('chat-active:: ') || trimmed.startsWith('chat-done:: ')) {
           const tokens = trimmed.split(/\s+/);
           const lastToken = tokens[tokens.length - 1];
           if (lastToken === url) {
@@ -385,19 +357,16 @@ export class SmartChatgptCodeblock {
       }
       return false;
     } catch (err) {
-      console.error('Error reading file to check if link is saved:', err);
+      console.error('Error checking if link is saved:', err);
       return false;
     }
   }
 
-  /**
-   * Returns true if the line for this url has "chat-done:: "
-   */
   async _check_if_done(url) {
     if (!this.file) return false;
     try {
       const raw_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(raw_data);
+      const [start, end] = this._find_codeblock_boundaries(raw_data);
       if (start < 0 || end < 0 || end <= start) return false;
 
       const lines = raw_data.split('\n').slice(start + 1, end);
@@ -419,77 +388,61 @@ export class SmartChatgptCodeblock {
   }
 
   /**
-   * Inserts a new url in "chat-active:: <timestamp> <url>" form at the top of the codeblock
+   * Insert new url line after the start
    */
   async _insert_link_into_codeblock(url) {
     if (!this.file) return;
-    const fresh_data = await this.plugin.app.vault.read(this.file);
-    const [start, end] = await this._find_codeblock_boundaries(fresh_data);
-    if (start < 0 || end < 0) {
-      console.warn('Could not find codeblock boundaries to insert URL:', url);
-      return;
-    }
-
-    const lines = fresh_data.split('\n');
-    const timestamp_in_seconds = Math.floor(Date.now() / 1000);
-    const new_line = `chat-active:: ${timestamp_in_seconds} ${url}`;
-
-    lines.splice(start + 1, 0, new_line);
-    const new_data = lines.join('\n');
-    await this.plugin.app.vault.modify(this.file, new_data);
+    await this.plugin.app.vault.process(this.file, (file_data) => {
+      const [start, end] = this._find_codeblock_boundaries(file_data);
+      if (start < 0 || end < 0) {
+        console.warn('Cannot find codeblock to insert link:', url);
+        return file_data;
+      }
+      const lines = file_data.split('\n');
+      const timestamp_in_seconds = Math.floor(Date.now() / 1000);
+      const new_line = `chat-active:: ${timestamp_in_seconds} ${url}`;
+      lines.splice(start + 1, 0, new_line);
+      return lines.join('\n');
+    });
   }
 
   /**
-   * Mark "chat-active::" -> "chat-done::" for this url.
-   * Then navigate to the next undone link if available. Otherwise root.
+   * Mark "chat-active::" -> "chat-done::" for this url, then navigate to next undone link if any
    */
   async _mark_thread_done_in_codeblock(url) {
     if (!this.file) return;
-    const fresh_data = await this.plugin.app.vault.read(this.file);
-    const lines = fresh_data.split('\n');
-
-    const [start, end] = await this._find_codeblock_boundaries(fresh_data);
-    if (start < 0 || end < 0) {
-      console.warn('Could not find codeblock boundaries to mark done:', url);
-      return;
-    }
-
-    let doneLineIndex = -1;
-    for (let i = start + 1; i < end; i++) {
-      const trimmed = lines[i].trim();
-      if (trimmed.startsWith('chat-active:: ') && trimmed.includes(url)) {
-        lines[i] = lines[i].replace('chat-active:: ', 'chat-done:: ');
-        doneLineIndex = i;
-        break;
+    let nextUrl = '';
+    await this.plugin.app.vault.process(this.file, (file_data) => {
+      const lines = file_data.split('\n');
+      const [start, end] = this._find_codeblock_boundaries(file_data);
+      if (start < 0 || end < 0) {
+        console.warn('Cannot find codeblock boundaries to mark done:', url);
+        return file_data;
       }
-    }
 
-    const new_data = lines.join('\n');
-    await this.plugin.app.vault.modify(this.file, new_data);
+      let doneLineIndex = -1;
+      for (let i = start + 1; i < end; i++) {
+        const trimmed = lines[i].trim();
+        if (trimmed.startsWith('chat-active:: ') && trimmed.includes(url)) {
+          lines[i] = lines[i].replace('chat-active:: ', 'chat-done:: ');
+          doneLineIndex = i;
+          break;
+        }
+      }
+      const updatedData = lines.join('\n');
+      nextUrl = this._find_next_undone_url(updatedData, start, end, doneLineIndex) || '';
+      return updatedData;
+    });
 
-    // find next undone
-    const nextUrl = this._find_next_undone_url(new_data, start, end, doneLineIndex);
     if (nextUrl) {
       this.webview_el?.setAttribute('src', nextUrl);
       this.current_url = nextUrl;
-      return;
+    } else {
+      this.webview_el?.setAttribute('src', 'https://chatgpt.com');
+      this.current_url = 'https://chatgpt.com';
     }
-
-    // none undone -> root
-    this.webview_el?.setAttribute('src', 'https://chatgpt.com');
-    this.current_url = 'https://chatgpt.com';
   }
 
-  /**
-   * Look for the next line after 'doneIndex' that starts with "chat-active::",
-   * parse out the URL, and return it. If none found, returns empty string.
-   *
-   * @param {string} file_data
-   * @param {number} start
-   * @param {number} end
-   * @param {number} doneIndex
-   * @returns {string|null}
-   */
   _find_next_undone_url(file_data, start, end, doneIndex) {
     if (doneIndex < 0) return null;
     const lines = file_data.split('\n');
@@ -504,10 +457,9 @@ export class SmartChatgptCodeblock {
   }
 
   /**
-   * Locates the triple-backtick boundaries for ```smart-chatgpt``` in the file.
-   * Returns [start_line, end_line] for the code fence lines themselves.
+   * Finds lines of ```smart-chatgpt ... ```
    */
-  async _find_codeblock_boundaries(file_data) {
+  _find_codeblock_boundaries(file_data) {
     if (!file_data) return [this.line_start, this.line_end];
 
     const lines = file_data.split('\n');

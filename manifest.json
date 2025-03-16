@@ -2,7 +2,7 @@
   "id": "smart-chatgpt",
   "name": "Smart ChatGPT",
   "version": "1.0.6",
-  "minAppVersion": "0.12.0",
+  "minAppVersion": "1.8.0",
   "description": "Integrate OpenAI's ChatGPT seamlessly in notes. Automatically saves links, allows marking threads as done and integrates with Dataview.",
   "author": "🌴 Brian",
   "authorUrl": "https://smartconnections.app",
