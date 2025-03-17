@@ -17,14 +17,22 @@ export class SmartChatgptCodeblock {
     this.source = source;
 
     this.link_regex = /(https?:\/\/[^\s]+)/g;
+
+    // Supported ChatGPT thread domains
+    this._SUPPORTED_DOMAINS = [
+      'chatgpt.com',
+      'operator.chatgpt.com'
+    ];
+    // Fallback when no undone link is found
+    this._FALLBACK_URL = 'https://chatgpt.com';
+
     this.links = this._extract_links(this.source);
 
     const not_done_link_obj = this.links.find(obj => !obj.done);
     this.initial_link = not_done_link_obj
       ? not_done_link_obj.url
-      : 'https://chatgpt.com/';
+      : this._FALLBACK_URL;
 
-    this.THREAD_PREFIX = 'https://chatgpt.com/c/';
     this.last_detected_url = this.initial_link;
     this.current_url = this.initial_link;
 
@@ -96,7 +104,7 @@ export class SmartChatgptCodeblock {
     const not_done_link_obj = this.links.find(obj => !obj.done);
     this.initial_link = not_done_link_obj
       ? not_done_link_obj.url
-      : 'https://chatgpt.com/';
+      : this._FALLBACK_URL;
     this.last_detected_url = this.initial_link;
     this.current_url = this.initial_link;
 
@@ -217,7 +225,9 @@ export class SmartChatgptCodeblock {
     for (const link_obj of this.links) {
       const option_el = this.dropdown_el.createEl('option');
       option_el.value = link_obj.url;
-      option_el.textContent = link_obj.done ? ('✓ ' + link_obj.url) : link_obj.url;
+      option_el.textContent = link_obj.done
+        ? ('✓ ' + link_obj.url)
+        : link_obj.url;
     }
     this.dropdown_el.value = this.initial_link;
 
@@ -253,7 +263,7 @@ export class SmartChatgptCodeblock {
     this.last_detected_url = new_url;
     this.current_url = new_url;
 
-    // Auto-save new thread link
+    // Auto-save new thread link if it's recognized
     if (this._is_thread_link(new_url)) {
       const link_to_save = this._normalize_url(new_url);
       const already_saved = await this._check_if_saved(link_to_save);
@@ -276,8 +286,24 @@ export class SmartChatgptCodeblock {
     }
   }
 
+  /**
+   * Checks if the provided URL is a recognized ChatGPT thread link.
+   * Must be under one of the supported domains and must have path starting with /c/.
+   *
+   * @param {string} url
+   * @returns {boolean}
+   */
   _is_thread_link(url) {
-    return url.startsWith(this.THREAD_PREFIX);
+    try {
+      const u = new URL(url);
+      // Check domain and path
+      if (this._SUPPORTED_DOMAINS.includes(u.hostname)) {
+        return u.pathname.startsWith('/c/');
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
@@ -407,7 +433,8 @@ export class SmartChatgptCodeblock {
   }
 
   /**
-   * Mark "chat-active::" -> "chat-done::" for this url, then navigate to next undone link if any
+   * Mark "chat-active::" -> "chat-done::" for this url,
+   * then navigate to next undone link if any
    */
   async _mark_thread_done_in_codeblock(url) {
     if (!this.file) return;
@@ -438,8 +465,8 @@ export class SmartChatgptCodeblock {
       this.webview_el?.setAttribute('src', nextUrl);
       this.current_url = nextUrl;
     } else {
-      this.webview_el?.setAttribute('src', 'https://chatgpt.com');
-      this.current_url = 'https://chatgpt.com';
+      this.webview_el?.setAttribute('src', this._FALLBACK_URL);
+      this.current_url = this._FALLBACK_URL;
     }
   }
 
