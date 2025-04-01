@@ -18,10 +18,11 @@ export class SmartChatgptCodeblock {
 
     this.link_regex = /(https?:\/\/[^\s]+)/g;
 
-    // Supported ChatGPT thread domains
+    // Extended domains
     this._SUPPORTED_DOMAINS = [
       'chatgpt.com',
-      'operator.chatgpt.com'
+      'operator.chatgpt.com',
+      'sora.com'
     ];
     // Fallback when no undone link is found
     this._FALLBACK_URL = 'https://chatgpt.com';
@@ -113,10 +114,15 @@ export class SmartChatgptCodeblock {
     // top row
     const top_row_el = this.container_el?.createEl('div', { cls: 'sc-top-row' });
 
+    // If links are found, build dropdown
     if (this.links.length > 0 && top_row_el) {
       this._build_dropdown(top_row_el);
     }
+
+    // Additional requested items: 'New operator' & 'New Sora'
+    // Add them at the end of the dropdown
     if (top_row_el) {
+
       this.mark_done_button_el = top_row_el.createEl('button', {
         text: 'Mark done',
         cls: 'sc-mark-done-button sc-hidden' // default hidden
@@ -131,6 +137,7 @@ export class SmartChatgptCodeblock {
       });
       this.webview_el.setAttribute('partition', 'persist:smart-chatgpt-' + this.plugin.app.vault.getName());
       this.webview_el.setAttribute('allowpopups', '');
+      this.webview_el.setAttribute('webpreferences', 'nativeWindowOpen=yes, contextIsolation=yes');
       this._init_navigation_events();
 
       // Use a custom property in CSS to handle dynamic height
@@ -222,6 +229,15 @@ export class SmartChatgptCodeblock {
    */
   _build_dropdown(parent_el) {
     this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
+    if (this.dropdown_el) {
+      const new_operator_opt = this.dropdown_el.createEl('option');
+      new_operator_opt.value = 'https://operator.chatgpt.com';
+      new_operator_opt.textContent = 'New operator';
+
+      const new_sora_opt = this.dropdown_el.createEl('option');
+      new_sora_opt.value = 'https://sora.com';
+      new_sora_opt.textContent = 'New Sora';
+    }
     for (const link_obj of this.links) {
       const option_el = this.dropdown_el.createEl('option');
       option_el.value = link_obj.url;
@@ -298,7 +314,7 @@ export class SmartChatgptCodeblock {
       const u = new URL(url);
       // Check domain and path
       if (this._SUPPORTED_DOMAINS.includes(u.hostname)) {
-        return u.pathname.startsWith('/c/');
+        return u.pathname.startsWith('/c/') || u.pathname.startsWith('/g/');
       }
       return false;
     } catch (e) {

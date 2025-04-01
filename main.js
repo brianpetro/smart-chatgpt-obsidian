@@ -1,5 +1,6 @@
 import { Plugin, Notice, TFile, PluginSettingTab, Setting } from 'obsidian';
 import { SmartChatgptCodeblock } from './smart_chatgpt_codeblock.js';
+import { session } from 'electron';
 
 /**
  * @typedef {Object} SmartChatgptPluginSettings
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS = {
  * A settings tab for the SmartChatgptPlugin. Includes:
  * - numeric field for 'iframe_height'
  * - slider for 'zoom_factor'
+ * - button to clear webview partition data
  */
 class SmartChatgptSettingTab extends PluginSettingTab {
   /**
@@ -80,6 +82,28 @@ class SmartChatgptSettingTab extends PluginSettingTab {
           text: `Current: ${this.plugin.settings.zoom_factor.toFixed(1)}`
         });
         previewEl.style.marginTop = '5px';
+      });
+
+    // Button to clear webview partition cache
+    new Setting(containerEl)
+      .setName('Clear cache')
+      .setDesc('Clears the cache for the ChatGPT webview. May resolve some issues with ChatGPT.')
+      .addButton((btn) => {
+        btn.setButtonText('Clear Cache')
+          .onClick(async () => {
+            await this.plugin.clear_webview_partition_cache();
+          });
+      });
+
+    // Button to clear webview partition data
+    new Setting(containerEl)
+      .setName('Clear data')
+      .setDesc('Clears cache, cookies, local storage, etc. May resolve some other issues with ChatGPT.')
+      .addButton((btn) => {
+        btn.setButtonText('Clear Data')
+          .onClick(async () => {
+            await this.plugin.clear_webview_partition_data();
+          });
       });
   }
 }
@@ -181,6 +205,48 @@ export default class SmartChatgptPlugin extends Plugin {
 
     if (this.registerMarkdownCodeBlockProcessor) {
       this.registerMarkdownCodeBlockProcessor('smart-chatgpt', processor);
+    }
+  }
+
+
+  get_session_partition() {
+    const { session } = window.electron.remote || {};
+    const current_partition = 'persist:smart-chatgpt-' + this.app.vault.getName();
+    return session.fromPartition(current_partition);
+  }
+
+  async clear_webview_partition_cache() {
+    const session_partition = this.get_session_partition();
+    await session_partition.clearCache();
+    this.notices.show('Successfully cleared ChatGPT webview cache.');
+  }
+
+  /**
+   * Clears all webview partition data used by 'smart-chatgpt'.
+   * @returns {Promise<void>}
+   */
+  async clear_webview_partition_data() {
+    const session_partition = this.get_session_partition();
+
+    try {
+      await session_partition.clearStorageData({
+        storages: [
+          'appcache',
+          'cache',
+          'cookies',
+          'filesystem',
+          'indexdb',
+          'localstorage',
+          'shadercache',
+          'serviceworkers',
+          'websql',
+          'cachestorage'
+        ]
+      });
+      this.notices.show('Successfully cleared ChatGPT webview data.');
+    } catch (err) {
+      console.error('Error clearing partition data:', err);
+      this.notices.show('Failed to clear webview data. See console.');
     }
   }
 }
