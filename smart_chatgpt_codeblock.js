@@ -314,7 +314,10 @@ export class SmartChatgptCodeblock {
       const u = new URL(url);
       // Check domain and path
       if (this._SUPPORTED_DOMAINS.includes(u.hostname)) {
-        return u.pathname.startsWith('/c/') || u.pathname.startsWith('/g/');
+        return u.pathname.startsWith('/c/')
+          // || u.pathname.startsWith('/g/') // sora generated media
+          || u.pathname.startsWith('/t/') // sora task
+        ;
       }
       return false;
     } catch (e) {
