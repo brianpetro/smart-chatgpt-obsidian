@@ -263,12 +263,19 @@ export class SmartChatgptCodeblock {
     });
 
     this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._handle_new_url(ev.url);
+      if (ev.url) this._debounce_handle_new_url(ev.url);
     });
 
     this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._handle_new_url(ev.url);
+      if (ev.url) this._debounce_handle_new_url(ev.url);
     });
+  }
+
+  _debounce_handle_new_url(new_url) {
+    clearTimeout(this.debounce_handle_new_url_timeout);
+    this.debounce_handle_new_url_timeout = setTimeout(() => {
+      this._handle_new_url(new_url);
+    }, 2000);
   }
 
   async _handle_new_url(new_url) {
