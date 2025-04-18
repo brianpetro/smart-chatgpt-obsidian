@@ -1,6 +1,6 @@
 {
   "name": "smart-chatgpt",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Integrate OpenAI's ChatGPT seamlessly in notes. Automatically saves links, allows marking threads as done and integrates with Dataview.",
   "author": "🌴 Brian",
   "license": "MIT",
