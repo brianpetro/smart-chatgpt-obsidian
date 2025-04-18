@@ -114,14 +114,9 @@ export class SmartChatgptCodeblock {
     // top row
     const top_row_el = this.container_el?.createEl('div', { cls: 'sc-top-row' });
 
-    // If links are found, build dropdown
-    if (this.links.length > 0 && top_row_el) {
-      this._build_dropdown(top_row_el);
-    }
-
-    // Additional requested items: 'New operator' & 'New Sora'
-    // Add them at the end of the dropdown
+    // Always build dropdown if top_row_el exists
     if (top_row_el) {
+      this._build_dropdown(top_row_el);
 
       this.mark_done_button_el = top_row_el.createEl('button', {
         text: 'Mark done',
@@ -226,18 +221,21 @@ export class SmartChatgptCodeblock {
 
   /**
    * Creates a dropdown for links, labeling done ones with "✓".
+   * Also includes static options for 'New operator' and 'New Sora'.
    */
   _build_dropdown(parent_el) {
     this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
-    if (this.dropdown_el) {
-      const new_operator_opt = this.dropdown_el.createEl('option');
-      new_operator_opt.value = 'https://operator.chatgpt.com';
-      new_operator_opt.textContent = 'New operator';
 
-      const new_sora_opt = this.dropdown_el.createEl('option');
-      new_sora_opt.value = 'https://sora.com';
-      new_sora_opt.textContent = 'New Sora';
-    }
+    // Add static options first
+    const new_operator_opt = this.dropdown_el.createEl('option');
+    new_operator_opt.value = 'https://operator.chatgpt.com';
+    new_operator_opt.textContent = 'New operator';
+
+    const new_sora_opt = this.dropdown_el.createEl('option');
+    new_sora_opt.value = 'https://sora.com';
+    new_sora_opt.textContent = 'New Sora';
+
+    // Add links from the codeblock
     for (const link_obj of this.links) {
       const option_el = this.dropdown_el.createEl('option');
       option_el.value = link_obj.url;
