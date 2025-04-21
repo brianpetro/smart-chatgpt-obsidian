@@ -132,6 +132,7 @@ export class SmartChatgptCodeblock {
       });
       this.webview_el.setAttribute('partition', 'persist:smart-chatgpt-' + this.plugin.app.vault.getName());
       this.webview_el.setAttribute('allowpopups', '');
+      this.webview_el.setAttribute('useragent', "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.191 Safari/537.36");
       this.webview_el.setAttribute('webpreferences', 'nativeWindowOpen=yes, contextIsolation=yes');
       this._init_navigation_events();
 
