@@ -222,7 +222,7 @@ export class SmartChatgptCodeblock {
 
   /**
    * Creates a dropdown for links, labeling done ones with "✓".
-   * Also includes static options for 'New operator' and 'New Sora'.
+   * Also includes static options for 'New operator', 'New Codex', and 'New Sora'.
    */
   _build_dropdown(parent_el) {
     this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
@@ -231,6 +231,10 @@ export class SmartChatgptCodeblock {
     const new_operator_opt = this.dropdown_el.createEl('option');
     new_operator_opt.value = 'https://operator.chatgpt.com';
     new_operator_opt.textContent = 'New operator';
+
+    const new_codex_opt = this.dropdown_el.createEl('option');
+    new_codex_opt.value = 'https://chatgpt.com/codex';
+    new_codex_opt.textContent = 'New Codex';
 
     const new_sora_opt = this.dropdown_el.createEl('option');
     new_sora_opt.value = 'https://sora.com';
@@ -310,7 +314,11 @@ export class SmartChatgptCodeblock {
 
   /**
    * Checks if the provided URL is a recognized ChatGPT thread link.
-   * Must be under one of the supported domains and must have path starting with /c/.
+   * Must be under one of the supported domains and must match a path pattern representing a thread/task.
+   * Recognized patterns:
+   *   - /c/: standard chat threads (also used for operator)
+   *   - /codex: Codex home or /codex/tasks/: individual codex task pages
+   *   - /t/: Sora tasks
    *
    * @param {string} url
    * @returns {boolean}
@@ -320,10 +328,12 @@ export class SmartChatgptCodeblock {
       const u = new URL(url);
       // Check domain and path
       if (this._SUPPORTED_DOMAINS.includes(u.hostname)) {
-        return u.pathname.startsWith('/c/')
-          // || u.pathname.startsWith('/g/') // sora generated media
-          || u.pathname.startsWith('/t/') // sora task
-        ;
+        return (
+          u.pathname.startsWith('/c/') ||
+          u.pathname.startsWith('/codex/tasks/') ||
+          // u.pathname.startsWith('/g/') // sora generated media (disabled until needed)
+          u.pathname.startsWith('/t/') // sora tasks
+        );
       }
       return false;
     } catch (e) {
