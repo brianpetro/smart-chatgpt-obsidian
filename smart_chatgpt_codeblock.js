@@ -165,14 +165,64 @@ export class SmartChatgptCodeblock {
 
       this.copy_link_button_el = bottom_row_el.createEl('button', { text: 'Copy link' });
       this.copy_link_button_el.addEventListener('click', () => {
-        if (this.current_url && this.current_url.startsWith('http')) {
+        if (this.current_url?.startsWith('http')) {
           navigator.clipboard.writeText(this.current_url);
           this.plugin.notices.show('Copied current URL to clipboard.');
+        }
+      });
+
+      this.grow_contain_button_el = bottom_row_el.createEl('button', { text: 'Grow' });
+      this._grow_css_active = false;
+
+      this.grow_contain_button_el.addEventListener('click', () => {
+        if (this._grow_css_active) {
+          this._removeGrowCss();
+          this.grow_contain_button_el.textContent = 'Grow';
+          this._grow_css_active = false;
+        } else {
+          this._applyGrowCss();
+          this.grow_contain_button_el.textContent = 'Contain';
+          this._grow_css_active = true;
         }
       });
     }
 
     this._render_save_ui(this.initial_link);
+  }
+
+  /**
+   * Injects a <style id="sc-grow-css"> tag with the “grow” rules.
+   */
+  _applyGrowCss() {
+    if (document.getElementById('sc-grow-css')) return;
+
+    const css = `
+.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer:has(.block-language-smart-chatgpt){
+  max-width:none!important;
+}
+.cm-content.cm-lineWrapping:has(.block-language-smart-chatgpt){
+  max-width:none!important;
+}
+.cm-content.cm-lineWrapping:has(.block-language-smart-chatgpt)>div{
+  width:var(--file-line-width);
+  max-width:none!important;
+}
+.cm-content.cm-lineWrapping:has(.block-language-smart-chatgpt)>.cm-embed-block:has(.block-language-smart-chatgpt){
+  width:auto;
+}`.trim();
+
+    const styleEl = document.createElement('style');
+    styleEl.id = 'sc-grow-css';
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+  }
+
+  /**
+   * Removes the injected grow rules if present.
+   */
+  _removeGrowCss() {
+    const styleEl = document.getElementById('sc-grow-css');
+    if (styleEl) styleEl.remove();
   }
 
   /**
