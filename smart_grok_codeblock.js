@@ -35,6 +35,7 @@ export class SmartGrokCodeblock {
     this.refresh_button_el = null;
     this.open_browser_button_el = null;
     this.copy_link_button_el = null;
+    this.grow_contain_button_el = null;
   }
 
   _extract_links(codeblock_source) {
@@ -101,14 +102,12 @@ export class SmartGrokCodeblock {
     this.status_text_el.style.marginLeft = 'auto';
 
     const webview_height = this.plugin.settings.iframe_height || 800;
-    this.webview_el = this.container_el.createEl('webview');
-    this.webview_el.setAttribute(
-      'partition',
-      this.plugin.get_session_partition()
-    );
+    this.webview_el = this.container_el.createEl('webview', { cls: 'sc-webview' });
+    this.webview_el.setAttribute('partition', this.plugin.app.getWebviewPartition());
     this.webview_el.setAttribute('allowpopups', '');
-    this.webview_el.style.width = '100%';
-    this.webview_el.style.height = webview_height + 'px';
+    this.webview_el.setAttribute('useragent', "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.191 Safari/537.36");
+    this.webview_el.setAttribute('webpreferences', 'nativeWindowOpen=yes, contextIsolation=yes');
+    this.webview_el.style.setProperty('--sc-webview-height', webview_height + 'px');
     this.webview_el.setAttribute('src', this.initial_link);
 
     this.webview_el.addEventListener('dom-ready', () => {
@@ -142,6 +141,21 @@ export class SmartGrokCodeblock {
       if (this.current_url && this.current_url.startsWith('http')) {
         navigator.clipboard.writeText(this.current_url);
         this.plugin.notices.show('Copied current URL to clipboard.');
+      }
+    });
+
+    this.grow_contain_button_el = bottom_row_el.createEl('button', { text: 'Grow' });
+    this._grow_css_active = false;
+
+    this.grow_contain_button_el.addEventListener('click', () => {
+      if (this._grow_css_active) {
+        this._removeGrowCss();
+        this.grow_contain_button_el.textContent = 'Grow';
+        this._grow_css_active = false;
+      } else {
+        this._applyGrowCss();
+        this.grow_contain_button_el.textContent = 'Contain';
+        this._grow_css_active = true;
       }
     });
 
@@ -214,11 +228,18 @@ export class SmartGrokCodeblock {
 
   _init_navigation_events() {
     this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._handle_new_url(ev.url);
+      if (ev.url) this._debounce_handle_new_url(ev.url);
     });
     this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._handle_new_url(ev.url);
+      if (ev.url) this._debounce_handle_new_url(ev.url);
     });
+  }
+
+  _debounce_handle_new_url(new_url) {
+    clearTimeout(this.debounce_handle_new_url_timeout);
+    this.debounce_handle_new_url_timeout = setTimeout(() => {
+      this._handle_new_url(new_url);
+    }, 2000);
   }
 
   async _handle_new_url(new_url) {
@@ -388,6 +409,35 @@ export class SmartGrokCodeblock {
 
     this.webview_el.setAttribute('src', 'https://x.com/i/grok');
     this.current_url = 'https://x.com/i/grok';
+  }
+
+  _applyGrowCss() {
+    if (document.getElementById('sc-grow-css')) return;
+
+    const css = `
+.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer:has(.block-language-smart-grok){
+  max-width:none!important;
+}
+.cm-content.cm-lineWrapping:has(.block-language-smart-grok){
+  max-width:none!important;
+}
+.cm-content.cm-lineWrapping:has(.block-language-smart-grok)>div{
+  width:var(--file-line-width);
+  max-width:none!important;
+}
+.cm-content.cm-lineWrapping:has(.block-language-smart-grok)>.cm-embed-block:has(.block-language-smart-grok){
+  width:auto;
+}`.trim();
+
+    const styleEl = document.createElement('style');
+    styleEl.id = 'sc-grow-css';
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+  }
+
+  _removeGrowCss() {
+    const styleEl = document.getElementById('sc-grow-css');
+    if (styleEl) styleEl.remove();
   }
 
   _find_next_undone_url(file_data, start, end, done_index) {
