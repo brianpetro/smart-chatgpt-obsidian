@@ -1,83 +1,98 @@
-# Smart ChatGPT Obsidian Plugin
-
-A dynamic Obsidian plugin integrating ChatGPT directly within your notes. It simplifies managing and interacting with ChatGPT threads through specially formatted codeblocks, allowing seamless interaction and saving of ChatGPT sessions directly into your notes.
+# Smart ChatGPT
+**Chat with ChatGPT, Claude, Gemini, and more—directly inside your Obsidian notes!** Keep your AI conversations organized and connected to your work, without ever leaving your vault.
 
 ![](./assets/smart-chatgpt-getting_started.gif)
 
-[Guide to Getting Started](https://docs.smartconnections.app/Smart-ChatGPT/Getting-Started).
+> [!NOTE] Stop losing your conversations!
+> Hey there! I'm 🌴 Brian. I found myself constantly juggling browser tabs for different AI chats while working on my notes. I'd lose track of important conversation threads and waste time trying to map them back to the right project.
+>
+> This plugin is my solution. It brings your AI chats right into the Obsidian notes where they belong. It's built to create a seamless, asynchronous workflow with AI, making sure your valuable discussions are always organized and right where you need them.
 
-## Features
-- **Smart ChatGPT Codeblocks** (`smart-chatgpt`)
-  - Insert ChatGPT sessions directly in notes.
-  - Automatically track ChatGPT thread URLs.
-  - Mark ChatGPT threads as "done" or "active" within your notes.
+## Key Features
+- 💬 **Embed Multiple AIs**: Works with ChatGPT, Anthropic Claude, Google Gemini, Perplexity, DeepSeek, xAI Grok, and Google AI Studio.
+- 🔗 **Automatic Link Saving**: Never lose a conversation. New thread URLs are automatically saved back into your note.
+- ✅ **Simple Task Management**: Mark conversations as "active" or "done" to track your progress on AI-assisted tasks.
+- 📂 **Multi-Thread Management**: Easily switch between multiple conversation threads within a single note using a dropdown menu.
+- 📊 **Dataview Integration**: Create dynamic dashboards to see all your active and completed AI chats across your entire vault.
+- ⚙️ **Customizable View**: Adjust the height and zoom of the embedded chat window for your comfort.
 
-- **Dynamic URL Management**
-  - Easily switch between multiple ChatGPT thread URLs within a single codeblock via a dropdown.
-  - Automatically save new ChatGPT thread links.
-  - Display real-time status of ChatGPT threads (Active or Done).
+## Getting Started
 
-- **Embedded Webview Integration**
-  - ChatGPT interface embedded within Obsidian notes.
-  - Adjustable webview zoom and height.
-  - Refresh, open externally, copy, and save URL functions built-in.
+1.  **Install the Plugin**: Find **Smart ChatGPT** in the Obsidian Community Plugins and install it.
+2.  **Insert a Codeblock**: Open the command palette (`⌘/Ctrl + P`) and type `Insert...`. You will see commands like `Insert OpenAI ChatGPT codeblock`, `Insert Anthropic Claude codeblock`, etc. Choose one!
+3.  **Start Chatting**: An interactive chat window will appear in your note. As you start a new conversation, the plugin will automatically detect the new URL and save it for you.
 
-- **Automatic Dataview Integration**
-  - Use Dataview to track incomplete and completed ChatGPT threads.
+## How It Works
 
-## Usage
+### Smart AI Codeblocks
 
-### Inserting ChatGPT Codeblock
-- Execute the command: `Insert Smart ChatGPT Codeblock` from the command palette.
+The core of the plugin is the dynamic codeblock. When you insert a codeblock for an AI service (e.g., `smart-chatgpt`), it becomes a live window to that service.
 
-### Interacting with ChatGPT
-- Within the inserted codeblock, type your message and submit.
-- URLs of new threads are auto-saved.
-- Mark threads as completed by clicking the **Mark Done** button.
-
-
-## Commands
-- `Insert Smart ChatGPT Codeblock`
-
-## Settings
-Customize the plugin in Obsidian settings:
-
-- **Iframe Height** (`number`): Height in pixels for the embedded ChatGPT webview (default: 800).
-- **Zoom Factor** (`0.1 - 2.0`): Adjust zoom level of embedded ChatGPT interface.
-
-## Codeblock Syntax
 ````md
 ```smart-chatgpt
-chat-active:: 1709719305 https://chatgpt.com/c/some-thread
-chat-done:: 1709719205 https://chatgpt.com/c/completed-thread
 ```
 ````
 
-- Automatically marks threads active/done.
-- Supports multiple threads per codeblock.
-
-### Dataview Integration
-
+When you start a conversation, the plugin automatically updates the codeblock with the new thread's URL, marking it as `chat-active`.
 
 ````md
-# in progress
+```smart-chatgpt
+chat-active:: 1709719305 https://chatgpt.com/c/some-new-thread
+```
+````
+
+### Managing Conversations
+
+- **Mark as Done**: When you're finished with a conversation, click the **"Mark Done"** button. The plugin will update the line to `chat-done`. This is great for tracking tasks.
+- **Switching Threads**: If you have multiple threads in one codeblock, a dropdown menu appears, letting you easily switch between them. Done threads are marked with a `✓`.
+
+### Power Up with Dataview
+
+Because the plugin saves thread status directly in your notes as `chat-active` or `chat-done`, you can use [Dataview](https://github.com/blacksmithgu/obsidian-dataview) to create powerful dashboards.
+
+#### Example: In-Progress AI Tasks
+````md
+# In Progress
 ```dataview
-LIST WITHOUT ID file.folder + " " + file.link + " " + file.mday 
-WHERE chat-active!=null
+LIST WITHOUT ID file.link
+WHERE chat-active
 SORT file.mtime DESC
 ```
 ````
 
+#### Example: Completed AI Tasks
 ````md
-# completed
+# Completed
 ```dataview
-LIST choice(typeof(chat-done)="string", 1, length(chat-done))
+LIST length(file.chat-done) + " completed"
 WHERE chat-done
-SORT choice(typeof(chat-done)="string", 1, length(chat-done)) DESC
+SORT length(file.chat-done) DESC
 ```
 ````
 
-- Dataviews dynamically update as thread statuses change.
+## Supported AI Services
+
+You can use a specific codeblock for each service:
+
+- `smart-chatgpt` for **OpenAI ChatGPT**
+- `smart-claude` for **Anthropic Claude**
+- `smart-gemini` for **Google Gemini**
+- `smart-deepseek` for **DeepSeek**
+- `smart-perplexity` for **Perplexity**
+- `smart-grok` for **xAI Grok**
+- `smart-aistudio` for **Google AI Studio**
+
+## Part of the Smart Ecosystem
+
+Smart ChatGPT is a proud member of the [Smart Plugins](https://smartconnections.app) family, which includes the flagship **[Smart Connections](https://obsidian.md/plugins?id=smart-connections)** plugin.
+
+Our mission is to build user-aligned, privacy-first tools that empower you to think better and achieve your goals. We believe in software that is:
+
+- 🔐 **Private & Local-First**: Your data stays with you.
+- 🌐 **Open-Source**: Transparent and community-driven.
+- ⚔️ **Mission-Driven**: Built to empower you, not to profit from your data.
+
+Come for the tools, stay for the community and our shared vision of thriving with AI.
 
 ---
 
