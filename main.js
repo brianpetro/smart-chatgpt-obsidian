@@ -1,33 +1,30 @@
-import { Plugin, Notice, TFile, PluginSettingTab, Setting } from 'obsidian';
-import { SmartChatgptCodeblock } from './smart_chatgpt_codeblock.js';
-import { session } from 'electron';
+import {
+  Plugin,
+  Notice,
+  TFile,
+  PluginSettingTab,
+  Setting
+} from 'obsidian';
+
+import { SmartChatgptCodeblock }    from './smart_chatgpt_codeblock.js';
+import { SmartClaudeCodeblock }     from './smart_claude_codeblock.js';
+import { SmartGeminiCodeblock }     from './smart_gemini_codeblock.js';
+import { SmartDeepseekCodeblock }   from './smart_deepseek_codeblock.js';
+import { SmartPerplexityCodeblock } from './smart_perplexity_codeblock.js';
+import { SmartGrokCodeblock }       from './smart_grok_codeblock.js';
+import { SmartAistudioCodeblock }   from './smart_aistudio_codeblock.js';
 
 /**
  * @typedef {Object} SmartChatgptPluginSettings
- * @property {number} iframe_height - height (in px) for the embedded iframe in codeblocks.
- * @property {number} zoom_factor - multiplier used to zoom in/out the ChatGPT webview (0.1 - 2.0).
- */
-
-/**
- * Default settings for SmartChatgptPlugin.
- * @type {SmartChatgptPluginSettings}
+ * @property {number} iframe_height
+ * @property {number} zoom_factor
  */
 const DEFAULT_SETTINGS = {
   iframe_height: 800,
   zoom_factor: 0.9
 };
 
-/**
- * A settings tab for the SmartChatgptPlugin. Includes:
- * - numeric field for 'iframe_height'
- * - slider for 'zoom_factor'
- * - button to clear webview partition data
- */
 class SmartChatgptSettingTab extends PluginSettingTab {
-  /**
-   * @param {import('obsidian').App} app
-   * @param {SmartChatgptPlugin} plugin
-   */
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -37,216 +34,165 @@ class SmartChatgptSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    // Numeric field for iframe height
     new Setting(containerEl)
       .setName('Height (px)')
-      .setDesc('Adjust how tall the embedded ChatGPT iframe is, in pixels.')
-      .addText(text => {
-        text
-          .setPlaceholder('600')
-          .setValue(this.plugin.settings.iframe_height.toString())
-          .onChange(async (value) => {
-            const parsed = parseInt(value, 10);
-            if (!isNaN(parsed)) {
-              this.plugin.settings.iframe_height = parsed;
+      .setDesc('Iframe height for embedded webviews.')
+      .addText(txt => {
+        txt
+          .setPlaceholder('800')
+          .setValue(String(this.plugin.settings.iframe_height))
+          .onChange(async v => {
+            const n = parseInt(v, 10);
+            if (!isNaN(n)) {
+              this.plugin.settings.iframe_height = n;
               await this.plugin.saveSettings();
             }
           });
       });
 
-    // Slider for zoom factor
     new Setting(containerEl)
       .setName('Zoom')
-      .setDesc('Change the zoom factor of the ChatGPT webview (0.1 - 2.0).')
+      .setDesc('Zoom factor for all webviews.')
       .addSlider(slider => {
         slider
           .setLimits(0.1, 2.0, 0.1)
           .setValue(this.plugin.settings.zoom_factor)
-          .onChange(async (value) => {
-            this.plugin.settings.zoom_factor = value;
+          .onChange(async v => {
+            this.plugin.settings.zoom_factor = v;
             await this.plugin.saveSettings();
-            this.display(); // refresh UI to update displayed value
+            this.display();
           });
       })
-      .addExtraButton(cb => {
-        cb.setIcon('reset');
-        cb.setTooltip('Reset zoom to 1.0');
-        cb.onClick(async () => {
-          this.plugin.settings.zoom_factor = 1.0;
-          await this.plugin.saveSettings();
-          this.display();
-        });
+      .addExtraButton(btn => {
+        btn
+          .setIcon('reset')
+          .setTooltip('Reset zoom')
+          .onClick(async () => {
+            this.plugin.settings.zoom_factor = 1.0;
+            await this.plugin.saveSettings();
+            this.display();
+          });
       })
       .then(setting => {
-        const previewEl = setting.settingEl.createEl('div', {
-          text: `Current: ${this.plugin.settings.zoom_factor.toFixed(1)}`
-        });
-        previewEl.style.marginTop = '5px';
-      });
-
-    // Button to clear webview partition cache
-    new Setting(containerEl)
-      .setName('Clear cache')
-      .setDesc('Clears the cache for the ChatGPT webview. May resolve some issues with ChatGPT.')
-      .addButton((btn) => {
-        btn.setButtonText('Clear Cache')
-          .onClick(async () => {
-            await this.plugin.clear_webview_partition_cache();
-          });
-      });
-
-    // Button to clear webview partition data
-    new Setting(containerEl)
-      .setName('Clear data')
-      .setDesc('Clears cache, cookies, local storage, etc. May resolve some other issues with ChatGPT.')
-      .addButton((btn) => {
-        btn.setButtonText('Clear Data')
-          .onClick(async () => {
-            await this.plugin.clear_webview_partition_data();
-          });
+        setting.settingEl
+          .createEl('div', {
+            text: `Current: ${this.plugin.settings.zoom_factor.toFixed(1)}`
+          })
+          .style.marginTop = '5px';
       });
   }
 }
 
 export default class SmartChatgptPlugin extends Plugin {
-  /**
-   * @type {SmartChatgptPluginSettings}
-   */
+  /** @type {SmartChatgptPluginSettings} */
   settings = DEFAULT_SETTINGS;
 
-  /**
-   * Custom environment config for SmartEnv.
-   * @type {Object}
-   */
-  smart_env_config = {
-    collections: {}
-  };
-
-  /**
-   * Called by Obsidian when the plugin is first loaded.
-   */
   async onload() {
-    this.notices = {
-      show(msg) {
-        new Notice(msg);
-      }
-    };
-
+    this.notices = { show(msg) { new Notice(msg); } };
     await this.loadSettings();
+
+    await this.disable_conflicting_plugins();
+
     this.register_all();
     this.addSettingTab(new SmartChatgptSettingTab(this.app, this));
   }
 
-  /**
-   * Loads settings from disk.
-   */
+  async disable_conflicting_plugins() {
+    const conflictIds = [
+      'smart-claude',
+      'smart-gemini',
+      'smart-deepseek',
+      'smart-perplexity',
+      'smart-grok',
+      'smart-aistudio'
+    ];
+    const enabled = this.app.plugins.enabledPlugins ?? new Set();
+    for (const id of conflictIds) {
+      if (enabled.has(id)) {
+        try {
+          await this.app.plugins.disablePlugin(id);
+          this.notices.show(`Disabled conflicting plugin: ${id}`);
+        } catch (e) { console.error(`Failed disabling ${id}:`, e); }
+      }
+    }
+  }
+
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
-
-  /**
-   * Saves settings to disk.
-   */
   async saveSettings() {
     await this.saveData(this.settings);
   }
 
-  /**
-   * Registers everything: the commands and codeblock processor.
-   */
-  register_all() {
-    this.register_commands();
-    this.register_dynamic_codeblock();
+  get_session_partition() {
+    return this.app.getWebviewPartition();
   }
 
-  /**
-   * Adds commands:
-   * 1) Insert a 'smart-chatgpt' codeblock in the active editor
-   */
+  register_all() {
+    this.register_commands();
+    this.register_dynamic_codeblocks();
+  }
+
   register_commands() {
-    this.addCommand({
-      id: 'insert-smart-chatgpt-codeblock',
-      name: 'Insert ChatGPT codeblock',
-      editorCallback: (editor) => {
-        editor.replaceSelection('```smart-chatgpt\n```\n');
-      }
+    /** @type {Array<[string,string]>} */
+    const cmds = [
+      ['smart-chatgpt',   'OpenAI ChatGPT'],
+      ['smart-claude',    'Anthropic Claude'],
+      ['smart-gemini',    'Google Gemini'],
+      ['smart-deepseek',  'DeepSeek'],
+      ['smart-perplexity','Perplexity'],
+      ['smart-grok',      'Grok'],
+      ['smart-aistudio',  'Google AI Studio']
+    ];
+    cmds.forEach(([lang, label]) => {
+      this.addCommand({
+        id: `insert-${lang}-codeblock`,
+        name: `Insert ${label} codeblock`,
+        editorCallback: ed => {
+          ed.replaceSelection(`\`\`\`${lang}\n\`\`\`\n`);
+        }
+      });
     });
   }
 
-  /**
-   * Registers a markdown codeblock processor for language 'smart-chatgpt',
-   * delegating UI logic to the SmartChatgptCodeblock class.
-   */
-  register_dynamic_codeblock() {
-    const processor = async (source, el, ctx) => {
+  register_dynamic_codeblocks() {
+    /** @type {Record<string, any>} */
+    const mapping = {
+      'smart-chatgpt':    SmartChatgptCodeblock,
+      'smart-claude':     SmartClaudeCodeblock,
+      'smart-gemini':     SmartGeminiCodeblock,
+      'smart-deepseek':   SmartDeepseekCodeblock,
+      'smart-perplexity': SmartPerplexityCodeblock,
+      'smart-grok':       SmartGrokCodeblock,
+      'smart-aistudio':   SmartAistudioCodeblock
+    };
+
+    const makeProcessor = Cls => async (source, el, ctx) => {
       const container = el.createEl('div', { cls: 'sc-dynamic-codeblock' });
-      const section_info = ctx.getSectionInfo(el);
-      if (!section_info) {
-        container.createEl('div', { text: 'Unable to get codeblock section info.' });
+
+      const info = ctx.getSectionInfo(el);
+      if (!info) { container.createEl('div', { text: 'Unable to get codeblock info.' }); return; }
+
+      const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
+      if (!(file instanceof TFile)) {
+        container.createEl('div', { text: 'Unable to locate file.' });
         return;
       }
-      const { lineStart, lineEnd } = section_info;
-      const file_path = ctx.sourcePath;
-      const file = this.app.vault.getAbstractFileByPath(file_path);
-      if (!file || !(file instanceof TFile)) {
-        container.createEl('div', { text: 'Unable to find file for codeblock.' });
-        return;
-      }
-      const codeblock = new SmartChatgptCodeblock({
+
+      const cb = new Cls({
         plugin: this,
         file,
-        line_start: lineStart,
-        line_end: lineEnd,
+        line_start: info.lineStart,
+        line_end: info.lineEnd,
         container_el: container,
         source
       });
-      codeblock.build();
+      cb.build();
     };
 
-    if (this.registerMarkdownCodeBlockProcessor) {
-      this.registerMarkdownCodeBlockProcessor('smart-chatgpt', processor);
-    }
-  }
-
-
-  get_session_partition() {
-    const { session } = window.electron.remote || {};
-    const current_partition = 'persist:smart-chatgpt-' + this.app.vault.getName();
-    return session.fromPartition(current_partition);
-  }
-
-  async clear_webview_partition_cache() {
-    const session_partition = this.get_session_partition();
-    await session_partition.clearCache();
-    this.notices.show('Successfully cleared ChatGPT webview cache.');
-  }
-
-  /**
-   * Clears all webview partition data used by 'smart-chatgpt'.
-   * @returns {Promise<void>}
-   */
-  async clear_webview_partition_data() {
-    const session_partition = this.get_session_partition();
-
-    try {
-      await session_partition.clearStorageData({
-        storages: [
-          'appcache',
-          'cache',
-          'cookies',
-          'filesystem',
-          'indexdb',
-          'localstorage',
-          'shadercache',
-          'serviceworkers',
-          'websql',
-          'cachestorage'
-        ]
-      });
-      this.notices.show('Successfully cleared ChatGPT webview data.');
-    } catch (err) {
-      console.error('Error clearing partition data:', err);
-      this.notices.show('Failed to clear webview data. See console.');
-    }
+    Object.entries(mapping).forEach(([lang, Cls]) => {
+      if (this.registerMarkdownCodeBlockProcessor)
+        this.registerMarkdownCodeBlockProcessor(lang, makeProcessor(Cls));
+    });
   }
 }
