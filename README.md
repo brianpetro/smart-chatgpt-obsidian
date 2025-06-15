@@ -18,9 +18,9 @@
 
 ## Getting Started
 
-1.  **Install the Plugin**: Find **Smart ChatGPT** in the Obsidian Community Plugins and install it.
-2.  **Insert a Codeblock**: Open the command palette (`⌘/Ctrl + P`) and type `Insert...`. You will see commands like `Insert OpenAI ChatGPT codeblock`, `Insert Anthropic Claude codeblock`, etc. Choose one!
-3.  **Start Chatting**: An interactive chat window will appear in your note. As you start a new conversation, the plugin will automatically detect the new URL and save it for you.
+1. **Install the Plugin**: Find **Smart ChatGPT** in the Obsidian Community Plugins and install it.  
+2. **Insert a Codeblock**: Open the command palette (`⌘/Ctrl + P`) and type `Insert...`. You will see commands like `Insert OpenAI ChatGPT codeblock`, `Insert Anthropic Claude codeblock`, etc. Choose one!  
+3. **Start Chatting**: An interactive chat window will appear in your note. As you start a new conversation, the plugin will automatically detect the new URL and save it for you.
 
 ## How It Works
 
@@ -43,14 +43,15 @@ chat-active:: 1709719305 https://chatgpt.com/c/some-new-thread
 
 ### Managing Conversations
 
-- **Mark as Done**: When you're finished with a conversation, click the **"Mark Done"** button. The plugin will update the line to `chat-done`. This is great for tracking tasks.
-- **Switching Threads**: If you have multiple threads in one codeblock, a dropdown menu appears, letting you easily switch between them. Done threads are marked with a `✓`.
+* **Mark as Done**: When you're finished with a conversation, click the **Mark done** button. The plugin will update the line to `chat-done`. This is great for tracking tasks.
+* **Switching Threads**: If you have multiple threads in one codeblock, a dropdown menu appears, letting you easily switch between them. Done threads are marked with a ✓.
 
 ### Power Up with Dataview
 
 Because the plugin saves thread status directly in your notes as `chat-active` or `chat-done`, you can use [Dataview](https://github.com/blacksmithgu/obsidian-dataview) to create powerful dashboards.
 
 #### Example: In-Progress AI Tasks
+
 ````md
 # In Progress
 ```dataview
@@ -61,6 +62,7 @@ SORT file.mtime DESC
 ````
 
 #### Example: Completed AI Tasks
+
 ````md
 # Completed
 ```dataview
@@ -72,15 +74,20 @@ SORT length(file.chat-done) DESC
 
 ## Supported AI Services
 
-You can use a specific codeblock for each service:
+Use a specific codeblock for each service:
 
-- `smart-chatgpt` for **OpenAI ChatGPT**
-- `smart-claude` for **Anthropic Claude**
-- `smart-gemini` for **Google Gemini**
-- `smart-deepseek` for **DeepSeek**
-- `smart-perplexity` for **Perplexity**
-- `smart-grok` for **xAI Grok**
-- `smart-aistudio` for **Google AI Studio**
+* `smart-chatgpt` for **OpenAI ChatGPT**
+* `smart-claude` for **Anthropic Claude**
+* `smart-gemini` for **Google Gemini**
+* `smart-deepseek` for **DeepSeek**
+* `smart-perplexity` for **Perplexity**
+* `smart-grok` for **xAI Grok**
+* `smart-aistudio` for **Google AI Studio**
+
+## FAQ
+
+**Google sign-in shows “Couldn’t sign you in – This browser or app may not be secure.”**
+Obsidian’s embedded webviews occasionally trigger Google’s security checks. Open the same page in Obsidian’s built-in **Web viewer** core plugin, complete the sign-in flow there, then return to your Smart ChatGPT codeblock and click **Refresh**. The session cookies are shared with the embedded view, so the chat window will load normally once authenticated.
 
 ## Part of the Smart Ecosystem
 
@@ -88,12 +95,12 @@ Smart ChatGPT is a proud member of the [Smart Plugins](https://smartconnections.
 
 Our mission is to build user-aligned, privacy-first tools that empower you to think better and achieve your goals. We believe in software that is:
 
-- 🔐 **Private & Local-First**: Your data stays with you.
-- 🌐 **Open-Source**: Transparent and community-driven.
-- ⚔️ **Mission-Driven**: Built to empower you, not to profit from your data.
+* 🔐 **Private & Local-First**: Your data stays with you.
+* 🌐 **Open-Source**: Transparent and community-driven.
+* ⚔️ **Mission-Driven**: Built to empower you, not to profit from your data.
 
 Come for the tools, stay for the community and our shared vision of thriving with AI.
 
 ---
 
-Developed by 🌴 Brian | [smartconnections.app](https://smartconnections.app)
+Developed by 🌴 Brian · [smartconnections.app](https://smartconnections.app)
