@@ -91,7 +91,7 @@ Use a specific codeblock for each service:
 ### I’m getting the Google sign‑in error:
 
 ```
-Couldn’t sign you in
+Couldn't sign you in
 This browser or app may not be secure. Learn more
 Try using a different browser. If you’re already using a supported browser, you can try again to sign in.
 ```
@@ -104,6 +104,12 @@ Google sometimes blocks Electron‑based webviews (like the one Obsidian uses) f
 3. Complete the Google login in that window.
 4. Return to your note and press **Refresh** at the bottom of the Smart Chat window.
    Your authenticated Google session is now reused inside the embedded chat.
+
+### AI Studio thread link isn't being saved
+
+AI Studio does **not** assign a permanent URL to a brand‑new chat until you explicitly save it.  
+After you've sent the first message in a new AI Studio conversation, click the **Save** button that appears at the top of the chat window.  
+Once saved, Smart Chat Notes plugin can detect the final thread URL and write it back into the `smart‑aistudio` codeblock.
 
 ---
 
