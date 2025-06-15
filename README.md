@@ -86,7 +86,8 @@ Use a specific codeblock for each service:
 
 ## FAQ
 
-**Google sign-in shows “Couldn’t sign you in – This browser or app may not be secure.”**
+### Google sign-in shows “Couldn’t sign you in – This browser or app may not be secure.”
+
 Obsidian’s embedded webviews occasionally trigger Google’s security checks. Open the same page in Obsidian’s built-in **Web viewer** core plugin, complete the sign-in flow there, then return to your Smart ChatGPT codeblock and click **Refresh**. The session cookies are shared with the embedded view, so the chat window will load normally once authenticated.
 
 ## Part of the Smart Ecosystem
