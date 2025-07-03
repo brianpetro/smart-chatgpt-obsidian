@@ -100,22 +100,22 @@ Google sometimes blocks Electron-based webviews (like the one Obsidian uses) fro
 **Fix:**
 
 1. Enable Obsidian’s built-in **Web viewer** core plugin.
-2. Open the AI service link with **Web viewer** (right-click → *Open in Web viewer*).
+2. Open the AI service link with **Web viewer** (right-click → *Open in Web viewer*).
 3. Complete the Google login in that window.
 4. Return to your note and press **Refresh** at the bottom of the Smart Chat window.
    Your authenticated Google session is now reused inside the embedded chat.
 
-### AI Studio thread link isn't being saved
+### AI Studio thread link isn't being saved
 
-AI Studio does **not** assign a permanent URL to a brand-new chat until you explicitly save it.  
-After you've sent the first message in a new AI Studio conversation, click the **Save** button that appears at the top of the chat window.  
-Once saved, Smart Chat Notes plugin can detect the final thread URL and write it back into the `smart-aistudio` codeblock.
+AI Studio does **not** assign a permanent URL to a brand-new chat until you explicitly save it.  
+After you've sent the first message in a new AI Studio conversation, click the **Save** button that appears at the top of the chat window.  
+Once saved, Smart Chat Notes plugin can detect the final thread URL and write it back into the `smart-aistudio` codeblock.
 
 ---
 
 ## Part of the Smart Ecosystem
 
-Smart ChatGPT is a proud member of the [Smart Plugins](https://smartconnections.app) family, which includes the flagship **[Smart Connections](https://obsidian.md/plugins?id=smart-connections)** plugin.
+Smart ChatGPT is a proud member of the [Smart Plugins](https://smartconnections.app) family, which includes the flagship **[Smart Connections](https://obsidian.md/plugins?id=smart-connections)** plugin.
 
 Our mission is to build user-aligned, privacy-first tools that empower you to think better and achieve your goals. We believe in software that is:
 
@@ -127,4 +127,4 @@ Come for the tools, stay for the community and our shared vision of thriving wit
 
 ---
 
-Developed by 🌴 Brian | [smartconnections.app](https://smartconnections.app)
+Developed by 🌴 Brian | [smartconnections.app](https://smartconnections.app)
