@@ -27,7 +27,7 @@ export class SmartChatgptCodeblock {
     // Regex for thread types
     this._GPT_THREAD_REGEX = /^\/g\/[^/]+\/c\/[a-f0-9-]+\/?$/i;
     this._SORA_TASK_REGEX = /^\/t\/[a-f0-9-]+\/?$/i;
-    this._CODEX_TASK_REGEX = /^\/codex\/tasks\/[a-z0-9-]+\/?$/i;
+    this._CODEX_TASK_REGEX = /^\/codex\/tasks\/[a-z0-9-_]+\/?$/i;
     this._CHAT_THREAD_REGEX = /^\/c\/[a-f0-9-]+\/?$/i;
     // Fallback when no undone link is found
     this._FALLBACK_URL = 'https://chatgpt.com';
