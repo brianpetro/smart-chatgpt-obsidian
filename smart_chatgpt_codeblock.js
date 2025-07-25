@@ -24,6 +24,11 @@ export class SmartChatgptCodeblock {
       'operator.chatgpt.com',
       'sora.com'
     ];
+    // Regex for thread types
+    this._GPT_THREAD_REGEX = /^\/g\/[^/]+\/c\/[a-f0-9-]+\/?$/i;
+    this._SORA_TASK_REGEX = /^\/t\/[a-f0-9-]+\/?$/i;
+    this._CODEX_TASK_REGEX = /^\/codex\/tasks\/[a-z0-9-]+\/?$/i;
+    this._CHAT_THREAD_REGEX = /^\/c\/[a-f0-9-]+\/?$/i;
     // Fallback when no undone link is found
     this._FALLBACK_URL = 'https://chatgpt.com';
 
@@ -351,6 +356,11 @@ export class SmartChatgptCodeblock {
     this._render_save_ui(new_url);
   }
 
+  /**
+   * Normalises a URL by stripping query / hash.
+   * @param {string} url
+   * @returns {string}
+   */
   _normalize_url(url) {
     try {
       const u = new URL(url);
@@ -367,7 +377,8 @@ export class SmartChatgptCodeblock {
    * Must be under one of the supported domains and must match a path pattern representing a thread/task.
    * Recognized patterns:
    *   - /c/: standard chat threads (also used for operator)
-   *   - /codex: Codex home or /codex/tasks/: individual codex task pages
+   *   - /g/{gpt-id}/c/{uuid}: custom GPT threads
+   *   - /codex/tasks/: individual codex task pages
    *   - /t/: Sora tasks
    *
    * @param {string} url
@@ -376,16 +387,14 @@ export class SmartChatgptCodeblock {
   _is_thread_link(url) {
     try {
       const u = new URL(url);
-      // Check domain and path
-      if (this._SUPPORTED_DOMAINS.includes(u.hostname)) {
-        return (
-          u.pathname.startsWith('/c/') ||
-          u.pathname.startsWith('/codex/tasks/') ||
-          // u.pathname.startsWith('/g/') // sora generated media (disabled until needed)
-          u.pathname.startsWith('/t/') // sora tasks
-        );
-      }
-      return false;
+      if (!this._SUPPORTED_DOMAINS.includes(u.hostname)) return false;
+      const path = u.pathname;
+      return (
+        this._CHAT_THREAD_REGEX.test(path) ||
+        this._GPT_THREAD_REGEX.test(path) ||
+        this._CODEX_TASK_REGEX.test(path) ||
+        this._SORA_TASK_REGEX.test(path)
+      );
     } catch (e) {
       return false;
     }
