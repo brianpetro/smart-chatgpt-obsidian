@@ -185,7 +185,8 @@ export default class SmartChatgptPlugin extends Plugin {
         line_start: info.lineStart,
         line_end: info.lineEnd,
         container_el: container,
-        source
+        source,
+        ctx
       });
       cb.build();
     };

@@ -1,4 +1,5 @@
-export class SmartGrokCodeblock {
+import { SmartChatCodeblock } from './smart_chat_codeblock.js';
+export class SmartGrokCodeblock extends SmartChatCodeblock {
   /**
    * @param {Object} options
    * @param {import('obsidian').Plugin} options.plugin – Parent plugin instance.
@@ -8,13 +9,8 @@ export class SmartGrokCodeblock {
    * @param {HTMLElement} options.container_el – Element where this UI renders.
    * @param {string} options.source – Raw text inside the ```smart-grok code‑block.
    */
-  constructor({ plugin, file, line_start, line_end, container_el, source }) {
-    this.plugin = plugin;
-    this.file = file;
-    this.line_start = line_start;
-    this.line_end = line_end;
-    this.container_el = container_el;
-    this.source = source;
+  constructor(opts = {}) {
+    super(opts);
 
     this.link_regex = /(https?:\/\/[^\s]+)/g;
     this.links = this._extract_links(this.source);
@@ -370,18 +366,6 @@ export class SmartGrokCodeblock {
       console.error('Error checking if link is done:', err);
       return false;
     }
-  }
-
-  async _insert_link_into_codeblock(url) {
-    if (!this.file) return;
-    const fresh_data = await this.plugin.app.vault.read(this.file);
-    const [start, end] = await this._find_codeblock_boundaries(fresh_data);
-    if (start < 0 || end < 0) return;
-
-    const lines = fresh_data.split('\n');
-    const ts = Math.floor(Date.now() / 1000);
-    lines.splice(start + 1, 0, `chat-active:: ${ts} ${url}`);
-    await this.plugin.app.vault.modify(this.file, lines.join('\n'));
   }
 
   async _mark_thread_done_in_codeblock(url) {

@@ -1,4 +1,5 @@
-export class SmartClaudeCodeblock {
+import { SmartChatCodeblock } from './smart_chat_codeblock.js';
+export class SmartClaudeCodeblock extends SmartChatCodeblock {
   /**
    * @param {Object} options
    * @param {import('obsidian').Plugin} options.plugin - The parent plugin instance.
@@ -8,14 +9,8 @@ export class SmartClaudeCodeblock {
    * @param {HTMLElement} options.container_el - The container where this codeblock UI is rendered.
    * @param {string} options.source - The raw text inside the ```smart-claude codeblock.
    */
-  constructor({ plugin, file, line_start, line_end, container_el, source }) {
-    this.plugin = plugin;
-    this.file = file;
-
-    this.line_start = line_start;
-    this.line_end = line_end;
-    this.container_el = container_el;
-    this.source = source;
+  constructor(opts = {}) {
+    super(opts);
 
     // We'll store links with done-ness.
     this.link_regex = /(https?:\/\/[^\s]+)/g;
@@ -411,24 +406,6 @@ export class SmartClaudeCodeblock {
       console.error('Error reading file for done-check:', err);
       return false;
     }
-  }
-
-  async _insert_link_into_codeblock(url) {
-    if (!this.file) return;
-    const fresh_data = await this.plugin.app.vault.read(this.file);
-    const [start, end] = await this._find_codeblock_boundaries(fresh_data);
-    if (start < 0 || end < 0) {
-      console.warn('Could not find codeblock boundaries to insert URL:', url);
-      return;
-    }
-
-    const lines = fresh_data.split('\n');
-    const timestamp_in_seconds = Math.floor(Date.now() / 1000);
-    const new_line = `chat-active:: ${timestamp_in_seconds} ${url}`;
-
-    lines.splice(start + 1, 0, new_line);
-    const new_data = lines.join('\n');
-    await this.plugin.app.vault.modify(this.file, new_data);
   }
 
   async _mark_thread_done_in_codeblock(url) {
