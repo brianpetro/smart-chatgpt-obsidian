@@ -15,11 +15,13 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
     this.link_regex = /(https?:\/\/[^\s]+)/g;
     this.links = this._extract_links(this.source);
 
+    this._FALLBACK_URL = 'https://www.perplexity.ai/';
     // first not-done link, else fallback
     const not_done_obj = this.links.find(l => !l.done);
     this.initial_link = not_done_obj
       ? not_done_obj.url
-      : 'https://www.perplexity.ai/';
+      : this._FALLBACK_URL
+    ;
 
     this.THREAD_PREFIX = 'https://www.perplexity.ai/search/';
 
@@ -103,10 +105,7 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
     top_row_el.style.marginBottom = '8px';
     top_row_el.style.alignItems = 'center';
 
-    // dropdown (if multiple links exist)
-    if (this.links.length > 1) {
-      this._build_dropdown(top_row_el);
-    }
+    this._build_dropdown(top_row_el);
 
     // mark done button
     this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
@@ -235,22 +234,6 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
     } catch (err) {
       console.error('Error prefixing lines in file:', err);
     }
-  }
-
-  _build_dropdown(parent_el) {
-    this.dropdown_el = parent_el.createEl('select');
-    for (const link_obj of this.links) {
-      const option_el = this.dropdown_el.createEl('option');
-      option_el.value = link_obj.url;
-      option_el.textContent = link_obj.done ? ('✓ ' + link_obj.url) : link_obj.url;
-    }
-    this.dropdown_el.value = this.initial_link;
-
-    this.dropdown_el.addEventListener('change', () => {
-      const new_link = this.dropdown_el.value;
-      this.webview_el.setAttribute('src', new_link);
-      this.current_url = new_link;
-    });
   }
 
   _init_navigation_events() {

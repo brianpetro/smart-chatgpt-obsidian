@@ -18,9 +18,11 @@ export class SmartDeepseekCodeblock extends SmartChatCodeblock {
 
     // The first not-done link, or fallback
     const not_done = this.links.find(obj => !obj.done);
+    this._FALLBACK_URL = 'https://chat.deepseek.com/';
     this.initial_link = not_done
       ? not_done.url
-      : 'https://chat.deepseek.com/';
+      : this._FALLBACK_URL
+    ;
 
     // For checking recognized thread links
     this.THREAD_PREFIX = 'https://chat.deepseek.com/a/chat/s/';
@@ -109,9 +111,7 @@ export class SmartDeepseekCodeblock extends SmartChatCodeblock {
     top_row_el.style.marginBottom = '8px';
     top_row_el.style.alignItems = 'center';
 
-    if (this.links.length > 1) {
-      this._build_dropdown(top_row_el);
-    }
+    this._build_dropdown(top_row_el);
 
     this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
     this.mark_done_button_el.style.display = 'none';
@@ -233,26 +233,6 @@ export class SmartDeepseekCodeblock extends SmartChatCodeblock {
     } catch (err) {
       console.error('Error prefixing lines in file:', err);
     }
-  }
-
-  _build_dropdown(parent_el) {
-    this.dropdown_el = parent_el.createEl('select');
-    for (const link_obj of this.links) {
-      const option_el = this.dropdown_el.createEl('option');
-      option_el.value = link_obj.url;
-      option_el.textContent = link_obj.done
-        ? ('✓ ' + link_obj.url)
-        : link_obj.url;
-    }
-    this.dropdown_el.value = this.initial_link;
-
-    this.dropdown_el.addEventListener('change', () => {
-      const new_link = this.dropdown_el.value;
-      if (this.webview_el) {
-        this.webview_el.setAttribute('src', new_link);
-        this.current_url = new_link;
-      }
-    });
   }
 
   _init_navigation_events() {

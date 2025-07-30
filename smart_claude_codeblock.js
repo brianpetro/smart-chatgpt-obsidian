@@ -16,11 +16,12 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     this.link_regex = /(https?:\/\/[^\s]+)/g;
     this.links = this._extract_links(this.source);
 
+    this._FALLBACK_URL = 'https://claude.ai/chat/new';
     // Pick the first not-done link if any, else fallback
     const not_done_link_obj = this.links.find(obj => !obj.done);
     this.initial_link = not_done_link_obj
       ? not_done_link_obj.url
-      : 'https://claude.ai/chat/new';
+      : this._FALLBACK_URL;
 
     this.THREAD_PREFIX = 'https://claude.ai/chat/';
     this.last_detected_url = this.initial_link;
@@ -107,9 +108,7 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     top_row_el.style.marginBottom = '8px';
     top_row_el.style.alignItems = 'center';
 
-    if (this.links.length > 1) {
-      this._build_dropdown(top_row_el);
-    }
+    this._build_dropdown(top_row_el);
 
     this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
     this.mark_done_button_el.style.display = 'none';
@@ -250,24 +249,6 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     } catch (err) {
       console.error('Error prefixing lines in file:', err);
     }
-  }
-
-  _build_dropdown(parent_el) {
-    this.dropdown_el = parent_el.createEl('select');
-    for (const link_obj of this.links) {
-      const option_el = this.dropdown_el.createEl('option');
-      option_el.value = link_obj.url;
-      option_el.textContent = link_obj.done ? ('✓ ' + link_obj.url) : link_obj.url;
-    }
-    this.dropdown_el.value = this.initial_link;
-
-    this.dropdown_el.addEventListener('change', () => {
-      const new_link = this.dropdown_el.value;
-      if (this.webview_el) {
-        this.webview_el.setAttribute('src', new_link);
-        this.current_url = new_link;
-      }
-    });
   }
 
   _init_navigation_events() {

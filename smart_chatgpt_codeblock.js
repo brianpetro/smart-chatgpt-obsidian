@@ -272,18 +272,7 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     });
   }
 
-  /**
-   * Creates a dropdown for links, labeling done ones with "✓".
-   * Also includes static options for 'New operator', 'New Codex', and 'New Sora'.
-   */
-  _build_dropdown(parent_el) {
-    this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
-
-    // Add static options first
-    const new_operator_opt = this.dropdown_el.createEl('option');
-    new_operator_opt.value = 'https://operator.chatgpt.com';
-    new_operator_opt.textContent = 'New operator';
-
+  add_dropdown_options() {
     const new_codex_opt = this.dropdown_el.createEl('option');
     new_codex_opt.value = 'https://chatgpt.com/codex';
     new_codex_opt.textContent = 'New Codex';
@@ -291,24 +280,12 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     const new_sora_opt = this.dropdown_el.createEl('option');
     new_sora_opt.value = 'https://sora.com';
     new_sora_opt.textContent = 'New Sora';
-
+    // Add static options first
+    const new_operator_opt = this.dropdown_el.createEl('option');
+    new_operator_opt.value = 'https://operator.chatgpt.com';
+    new_operator_opt.textContent = 'New Operator';
     // Add links from the codeblock
-    for (const link_obj of this.links) {
-      const option_el = this.dropdown_el.createEl('option');
-      option_el.value = link_obj.url;
-      option_el.textContent = link_obj.done
-        ? ('✓ ' + link_obj.url)
-        : link_obj.url;
-    }
-    this.dropdown_el.value = this.initial_link;
-
-    this.dropdown_el.addEventListener('change', () => {
-      const new_link = this.dropdown_el.value;
-      if (this.webview_el) {
-        this.webview_el.setAttribute('src', new_link);
-        this.current_url = new_link;
-      }
-    });
+    super.add_dropdown_options();
   }
 
   _init_navigation_events() {

@@ -15,10 +15,12 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
     this.link_regex = /(https?:\/\/[^\s]+)/g;
     this.links = this._extract_links(this.source);
 
+    this._FALLBACK_URL = 'https://grok.com/chat';
     const not_done_link_obj = this.links.find(obj => !obj.done);
     this.initial_link = not_done_link_obj
       ? not_done_link_obj.url
-      : 'https://grok.com/chat';
+      : this._FALLBACK_URL
+    ;
 
     // Updated to the new Grok chat path
     this.THREAD_PREFIX = 'https://grok.com/chat/';
@@ -80,7 +82,7 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
     top_row_el.style.marginBottom = '8px';
     top_row_el.style.alignItems = 'center';
 
-    if (this.links.length > 1) this._build_dropdown(top_row_el);
+    this._build_dropdown(top_row_el);
 
     this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
     this.mark_done_button_el.style.display = 'none';
@@ -213,22 +215,6 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
     for (const b of blocks) if (b.start <= this.line_start && b.end >= this.line_end) return [b.start, b.end];
     return [blocks[0].start, blocks[0].end];
-  }
-
-  _build_dropdown(parent_el) {
-    this.dropdown_el = parent_el.createEl('select');
-    for (const link_obj of this.links) {
-      const opt = this.dropdown_el.createEl('option');
-      opt.value = link_obj.url;
-      opt.textContent = link_obj.done ? '✓ ' + link_obj.url : link_obj.url;
-    }
-    this.dropdown_el.value = this.initial_link;
-
-    this.dropdown_el.addEventListener('change', () => {
-      const new_link = this.dropdown_el.value;
-      this.webview_el.setAttribute('src', new_link);
-      this.current_url = new_link;
-    });
   }
 
   _applyGrowCss() {
