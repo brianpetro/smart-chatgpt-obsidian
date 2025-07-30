@@ -235,47 +235,6 @@ export class SmartGeminiCodeblock extends SmartChatCodeblock {
     }
   }
 
-  /**
-   * Sets up event listeners to detect the webview's navigations and handle new URLs.
-   */
-  _init_navigation_events() {
-    this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-
-    this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-  }
-
-  _debounce_handle_new_url(new_url) {
-    clearTimeout(this.debounce_handle_new_url_timeout);
-    this.debounce_handle_new_url_timeout = setTimeout(() => {
-      this._handle_new_url(new_url);
-    }, 2000);
-  }
-
-  /**
-   * Called whenever the webview navigates to a new URL.
-   * If it's a new Gemini thread link, it is automatically saved.
-   */
-  async _handle_new_url(new_url) {
-    if (new_url === this.last_detected_url) return;
-    this.last_detected_url = new_url;
-    this.current_url = new_url;
-
-    if (this._is_thread_link(new_url)) {
-      const already_saved = await this._check_if_saved(new_url);
-      if (!already_saved) {
-        setTimeout(async () => {
-          await this._insert_link_into_codeblock(new_url);
-          this.plugin.notices.show('Auto-saved new Gemini thread link.');
-        }, 2000);
-      }
-    }
-    this._render_save_ui(new_url);
-  }
-
   _is_thread_link(url) {
     return url.startsWith(this.THREAD_PREFIX);
   }

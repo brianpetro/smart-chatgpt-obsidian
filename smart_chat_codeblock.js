@@ -47,7 +47,6 @@ export class SmartChatCodeblock {
     if (!this.dropdown_el) {
       if(!parent_el) throw new Error('Parent element is required to build dropdown');
       this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
-      this.dropdown_el.value = this.initial_link;
       this.dropdown_el.addEventListener('change', () => {
         const new_link = this.dropdown_el.value;
         if (this.webview_el) {
@@ -60,11 +59,12 @@ export class SmartChatCodeblock {
 
 
     this.add_dropdown_options();
+    this.dropdown_el.value = this.current_url || this.initial_link;
   }
   add_dropdown_options() {
-    const new_codex_opt = this.dropdown_el.createEl('option');
-    new_codex_opt.value = this._FALLBACK_URL;
-    new_codex_opt.textContent = 'New chat';
+    const new_chat = this.dropdown_el.createEl('option');
+    new_chat.value = this._FALLBACK_URL;
+    new_chat.textContent = 'New chat';
     // Add links from the codeblock
     for (const link_obj of this.links) {
       const option_el = this.dropdown_el.createEl('option');
@@ -72,6 +72,59 @@ export class SmartChatCodeblock {
       option_el.textContent = link_obj.done
         ? ('✓ ' + link_obj.url)
         : link_obj.url;
+    }
+  }
+  _init_navigation_events() {
+    if (!this.webview_el) return;
+    this.webview_el.addEventListener('did-finish-load', () => {
+      this.webview_el.setAttribute('data-did-finish-load', 'true');
+    });
+
+    this.webview_el.addEventListener('did-navigate', (ev) => {
+      if (ev.url) this._debounce_handle_new_url(ev.url);
+    });
+
+    this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
+      if (ev.url) this._debounce_handle_new_url(ev.url);
+    });
+  }
+  _debounce_handle_new_url(new_url) {
+    clearTimeout(this._nav_timer);
+    this._nav_timer = setTimeout(() => this._handle_new_url(new_url), 2000);
+  }
+
+  async _handle_new_url(new_url) {
+    const norm_new = this._normalize_url(new_url);
+    const norm_last = this._normalize_url(this.last_detected_url);
+    if (norm_new === norm_last) return;
+
+    this.last_detected_url = new_url;
+    this.current_url = new_url;
+
+    // Auto-save new thread link if it's recognized
+    if (this._is_thread_link(new_url)) {
+      const link_to_save = this._normalize_url(new_url);
+      const already_saved = await this._check_if_saved(link_to_save);
+      if (!already_saved) {
+        await this._insert_link_into_codeblock(link_to_save);
+        this.plugin.notices.show(`Auto-saved new ${this.constructor.name} thread link.`);
+      }
+    }
+    this._render_save_ui(new_url);
+  }
+  /**
+   * Normalises a URL by stripping query / hash.
+   * @param {string} url
+   * @returns {string}
+   */
+  _normalize_url(url) {
+    try {
+      const u = new URL(url);
+      u.search = '';
+      u.hash = '';
+      return u.toString();
+    } catch (_) {
+      return url;
     }
   }
   // Override this method in subclasses to extract links from the source based on platform-specific logic

@@ -236,38 +236,6 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
     }
   }
 
-  _init_navigation_events() {
-    this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-    this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-  }
-
-  _debounce_handle_new_url(new_url) {
-    clearTimeout(this.debounce_handle_new_url_timeout);
-    this.debounce_handle_new_url_timeout = setTimeout(() => {
-      this._handle_new_url(new_url);
-    }, 2000);
-  }
-
-  async _handle_new_url(new_url) {
-    if (new_url === this.last_detected_url) return;
-    this.last_detected_url = new_url;
-    this.current_url = new_url;
-
-    // auto-save if recognized as a Perplexity search link
-    if (this._is_thread_link(new_url)) {
-      const is_saved = await this._check_if_saved(new_url);
-      if (!is_saved) {
-        await this._insert_link_into_codeblock(new_url);
-        this.plugin.notices.show('Auto-saved new Perplexity search link.');
-      }
-    }
-    this._render_save_ui(new_url);
-  }
-
   /**
    * Returns true if the URL starts with the search prefix and does NOT end with '/new'.
    * This ensures 'https://www.perplexity.ai/search/new' is *not* treated as a valid thread link.

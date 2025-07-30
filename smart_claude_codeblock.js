@@ -174,34 +174,6 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
       }
     });
 
-    this.webview_el.addEventListener('did-finish-load', () => {
-      // bind a[href='/new'] to ensure it updates the current url (prevent JS from blocking default nav)
-      this.webview_el.executeJavaScript(
-        `
-        setTimeout(() => {
-          const new_link_els = document.querySelectorAll('a[href="/new"]');
-          if(new_link_els.length > 0){
-            new_link_els.forEach(el => {
-              const target_url = 'https://claude.ai/chat/new';
-              el.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                window.location.href = target_url;
-              });
-              el.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', (ev) => {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-                  window.location.href = target_url;
-                });
-              });
-            });
-          }
-        }, 1000)
-      `
-      );
-    });
-
     this._render_save_ui(this.initial_link);
   }
 
@@ -251,40 +223,11 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     }
   }
 
-  _init_navigation_events() {
-    this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-    this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-  }
-
-  _debounce_handle_new_url(new_url) {
-    clearTimeout(this.debounce_handle_new_url_timeout);
-    this.debounce_handle_new_url_timeout = setTimeout(() => {
-      this._handle_new_url(new_url);
-    }, 2000);
-  }
-
   async _handle_new_url(new_url) {
-    if (new_url === this.last_detected_url) return;
     if (new_url.startsWith('https://www.claudeusercontent.com/')) {
       return;
     }
-
-    this.last_detected_url = new_url;
-    this.current_url = new_url;
-
-    // Always auto-save if it's a thread link
-    if (this._is_thread_link(new_url)) {
-      const already_saved = await this._check_if_saved(new_url);
-      if (!already_saved) {
-        await this._insert_link_into_codeblock(new_url);
-        this.plugin.notices.show('Auto-saved new Claude conversation link.');
-      }
-    }
-    this._render_save_ui(new_url);
+    await super._handle_new_url(new_url);
   }
 
   _is_thread_link(url) {
