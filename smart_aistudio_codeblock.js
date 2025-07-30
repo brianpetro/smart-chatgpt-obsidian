@@ -235,35 +235,6 @@ export class SmartAistudioCodeblock extends SmartChatCodeblock {
     }
   }
 
-
-  _debounce_handle_new_url(new_url) {
-    clearTimeout(this.debounce_handle_new_url_timeout);
-    this.debounce_handle_new_url_timeout = setTimeout(() => {
-      this._handle_new_url(new_url);
-    }, 2000);
-  }
-
-  /**
-   * Called whenever the webview navigates to a new URL.
-   * If it's a new AI Studio thread link, it is automatically saved.
-   */
-  async _handle_new_url(new_url) {
-    if (new_url === this.last_detected_url) return;
-    this.last_detected_url = new_url;
-    this.current_url = new_url;
-
-    if (this._is_thread_link(new_url)) {
-      const already_saved = await this._check_if_saved(new_url);
-      if (!already_saved) {
-        setTimeout(async () => {
-          await this._insert_link_into_codeblock(new_url);
-          this.plugin.notices.show('Auto-saved new AI Studio thread link.');
-        }, 2000);
-      }
-    }
-    this._render_save_ui(new_url);
-  }
-
   _is_thread_link(url) {
     return url.startsWith(this.THREAD_PREFIX) && !url.endsWith('/new_chat');
   }

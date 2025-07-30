@@ -288,64 +288,6 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     super.add_dropdown_options();
   }
 
-  _init_navigation_events() {
-    if (!this.webview_el) return;
-    this.webview_el.addEventListener('did-finish-load', () => {
-      this.webview_el.setAttribute('data-did-finish-load', 'true');
-    });
-
-    this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-
-    this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-  }
-
-  _debounce_handle_new_url(new_url) {
-    clearTimeout(this.debounce_handle_new_url_timeout);
-    this.debounce_handle_new_url_timeout = setTimeout(() => {
-      this._handle_new_url(new_url);
-    }, 2000);
-  }
-
-  async _handle_new_url(new_url) {
-    const norm_new = this._normalize_url(new_url);
-    const norm_last = this._normalize_url(this.last_detected_url);
-    if (norm_new === norm_last) return;
-
-    this.last_detected_url = new_url;
-    this.current_url = new_url;
-
-    // Auto-save new thread link if it's recognized
-    if (this._is_thread_link(new_url)) {
-      const link_to_save = this._normalize_url(new_url);
-      const already_saved = await this._check_if_saved(link_to_save);
-      if (!already_saved) {
-        await this._insert_link_into_codeblock(link_to_save);
-        this.plugin.notices.show('Auto-saved new ChatGPT thread link.');
-      }
-    }
-    this._render_save_ui(new_url);
-  }
-
-  /**
-   * Normalises a URL by stripping query / hash.
-   * @param {string} url
-   * @returns {string}
-   */
-  _normalize_url(url) {
-    try {
-      const u = new URL(url);
-      u.search = '';
-      u.hash = '';
-      return u.toString();
-    } catch (_) {
-      return url;
-    }
-  }
-
   /**
    * Checks if the provided URL is a recognized ChatGPT thread link.
    * Must be under one of the supported domains and must match a path pattern representing a thread/task.
