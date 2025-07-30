@@ -235,18 +235,6 @@ export class SmartAistudioCodeblock extends SmartChatCodeblock {
     }
   }
 
-  /**
-   * Sets up event listeners to detect the webview's navigations and handle new URLs.
-   */
-  _init_navigation_events() {
-    this.webview_el.addEventListener('did-navigate', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-
-    this.webview_el.addEventListener('did-navigate-in-page', (ev) => {
-      if (ev.url) this._debounce_handle_new_url(ev.url);
-    });
-  }
 
   _debounce_handle_new_url(new_url) {
     clearTimeout(this.debounce_handle_new_url_timeout);
