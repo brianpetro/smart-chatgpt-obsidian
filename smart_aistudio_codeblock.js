@@ -381,35 +381,6 @@ export class SmartAistudioCodeblock extends SmartChatCodeblock {
     this.current_url = 'https://aistudio.google.com/prompts/new_chat';
   }
 
-  _applyGrowCss() {
-    if (document.getElementById('sc-grow-css')) return;
-
-    const css = `
-.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer:has(.block-language-smart-aistudio){
-  max-width:none!important;
-}
-.cm-content.cm-lineWrapping:has(.block-language-smart-aistudio){
-  max-width:none!important;
-}
-.cm-content.cm-lineWrapping:has(.block-language-smart-aistudio)>div{
-  width:var(--file-line-width);
-  max-width:none!important;
-}
-.cm-content.cm-lineWrapping:has(.block-language-smart-aistudio)>.cm-embed-block:has(.block-language-smart-aistudio){
-  width:auto;
-}`.trim();
-
-    const styleEl = document.createElement('style');
-    styleEl.id = 'sc-grow-css';
-    styleEl.textContent = css;
-    document.head.appendChild(styleEl);
-  }
-
-  _removeGrowCss() {
-    const styleEl = document.getElementById('sc-grow-css');
-    if (styleEl) styleEl.remove();
-  }
-
   /**
    * Finds the next line after done_line_index that starts with "chat-active::",
    * parse out the URL, and return it. If none, returns null.

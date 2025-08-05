@@ -40,6 +40,7 @@ export class SmartChatCodeblock {
       return lines.join('\n');
     });
   }
+
   /**
    * Creates a dropdown for links, labeling done ones with "✓".
    */
@@ -61,6 +62,7 @@ export class SmartChatCodeblock {
     this.add_dropdown_options();
     this.dropdown_el.value = this.current_url || this.initial_link;
   }
+
   add_dropdown_options() {
     const new_chat = this.dropdown_el.createEl('option');
     new_chat.value = this._FALLBACK_URL;
@@ -74,6 +76,7 @@ export class SmartChatCodeblock {
         : link_obj.url;
     }
   }
+
   _init_navigation_events() {
     if (!this.webview_el) return;
     this.webview_el.addEventListener('did-finish-load', () => {
@@ -88,6 +91,7 @@ export class SmartChatCodeblock {
       if (ev.url) this._debounce_handle_new_url(ev.url);
     });
   }
+
   _debounce_handle_new_url(new_url) {
     clearTimeout(this._nav_timer);
     this._nav_timer = setTimeout(() => this._handle_new_url(new_url), 2000);
@@ -112,6 +116,7 @@ export class SmartChatCodeblock {
     }
     this._render_save_ui(new_url);
   }
+
   /**
    * Normalises a URL by stripping query / hash.
    * @param {string} url
@@ -127,6 +132,42 @@ export class SmartChatCodeblock {
       return url;
     }
   }
+
+  /**
+   * Injects a <style id="sc-grow-css"> tag with the “grow” rules.
+   */
+  _applyGrowCss() {
+    if (document.getElementById('sc-grow-css')) return;
+
+    const css = `
+.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer:has(.sc-dynamic-codeblock){
+  max-width:none !important;
+}
+.cm-content.cm-lineWrapping:has(.sc-dynamic-codeblock){
+  max-width:none !important;
+}
+.cm-content.cm-lineWrapping:has(.sc-dynamic-codeblock)>div{
+  width:var(--file-line-width);
+  max-width:none !important;
+}
+.cm-content.cm-lineWrapping:has(.sc-dynamic-codeblock)>.cm-embed-block:has(.sc-dynamic-codeblock){
+  width:auto !important;
+}`.trim();
+
+    const styleEl = document.createElement('style');
+    styleEl.id = 'sc-grow-css';
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+  }
+
+  /**
+   * Removes the injected grow rules if present.
+   */
+  _removeGrowCss() {
+    const styleEl = document.getElementById('sc-grow-css');
+    if (styleEl) styleEl.remove();
+  }
+
   // Override this method in subclasses to extract links from the source based on platform-specific logic
   _extract_links(source) {}
 }

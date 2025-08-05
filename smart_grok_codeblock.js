@@ -217,27 +217,6 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
     return [blocks[0].start, blocks[0].end];
   }
 
-  _applyGrowCss() {
-    if (document.getElementById('sc-grow-css')) return;
-
-    const css = `
-.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer:has(.block-language-smart-grok){max-width:none!important;}
-.cm-content.cm-lineWrapping:has(.block-language-smart-grok){max-width:none!important;}
-.cm-content.cm-lineWrapping:has(.block-language-smart-grok)>div{width:var(--file-line-width);max-width:none!important;}
-.cm-content.cm-lineWrapping:has(.block-language-smart-grok)>.cm-embed-block:has(.block-language-smart-grok){width:auto;}
-`.trim();
-
-    const styleEl = document.createElement('style');
-    styleEl.id = 'sc-grow-css';
-    styleEl.textContent = css;
-    document.head.appendChild(styleEl);
-  }
-
-  _removeGrowCss() {
-    const styleEl = document.getElementById('sc-grow-css');
-    if (styleEl) styleEl.remove();
-  }
-
   _is_thread_link(url) {
     return url.startsWith(this.THREAD_PREFIX) && url.length > this.THREAD_PREFIX.length;
   }

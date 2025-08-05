@@ -367,35 +367,6 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     this.current_url = 'https://claude.ai/chat';
   }
 
-  _applyGrowCss() {
-    if (document.getElementById('sc-grow-css')) return;
-
-    const css = `
-.markdown-source-view.mod-cm6.is-readable-line-width .cm-sizer:has(.block-language-smart-claude){
-  max-width:none!important;
-}
-.cm-content.cm-lineWrapping:has(.block-language-smart-claude){
-  max-width:none!important;
-}
-.cm-content.cm-lineWrapping:has(.block-language-smart-claude)>div{
-  width:var(--file-line-width);
-  max-width:none!important;
-}
-.cm-content.cm-lineWrapping:has(.block-language-smart-claude)>.cm-embed-block:has(.block-language-smart-claude){
-  width:auto;
-}`.trim();
-
-    const styleEl = document.createElement('style');
-    styleEl.id = 'sc-grow-css';
-    styleEl.textContent = css;
-    document.head.appendChild(styleEl);
-  }
-
-  _removeGrowCss() {
-    const styleEl = document.getElementById('sc-grow-css');
-    if (styleEl) styleEl.remove();
-  }
-
   _find_next_undone_url(file_data, start, end, done_index) {
     if (done_index < 0) return null;
     const lines = file_data.split('\n');
