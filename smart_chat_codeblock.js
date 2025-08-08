@@ -94,7 +94,7 @@ export class SmartChatCodeblock {
 
   _debounce_handle_new_url(new_url) {
     clearTimeout(this._nav_timer);
-    this._nav_timer = setTimeout(() => this._handle_new_url(new_url), 2000);
+    this._nav_timer = setTimeout(() => this._handle_new_url(new_url), 300);
   }
 
   async _handle_new_url(new_url) {
