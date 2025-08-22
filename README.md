@@ -88,6 +88,15 @@ Use a specific codeblock for each service:
 
 ## FAQ
 
+### Claude won't sign in
+
+Some authentication flows fail inside the embedded webview.
+
+**Fix:**
+- Enable Obsidian's built-in **Web viewer** core plugin.
+- Open https://claude.ai with **Web viewer** and log in.
+- Return to your note and press **Refresh** at the bottom of the Smart Chat window.
+
 ### I’m getting the Google sign-in error:
 
 ```
@@ -103,7 +112,7 @@ Google sometimes blocks Electron-based webviews (like the one Obsidian uses) fro
 2. Open the AI service link with **Web viewer** (right-click → *Open in Web viewer*).
 3. Complete the Google login in that window.
 4. Return to your note and press **Refresh** at the bottom of the Smart Chat window.
-   Your authenticated Google session is now reused inside the embedded chat.
+	 Your authenticated Google session is now reused inside the embedded chat.
 
 ### AI Studio thread link isn't being saved
 
