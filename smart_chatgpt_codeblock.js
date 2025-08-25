@@ -1,4 +1,5 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
+import { is_chatgpt_thread_link } from './chatgpt_thread_link.js';
 
 export class SmartChatgptCodeblock extends SmartChatCodeblock {
   /**
@@ -15,17 +16,6 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
 
     this.link_regex = /(https?:\/\/[^\s]+)/g;
 
-    // Extended domains
-    this._SUPPORTED_DOMAINS = [
-      'chatgpt.com',
-      'operator.chatgpt.com',
-      'sora.com'
-    ];
-    // Regex for thread types
-    this._GPT_THREAD_REGEX = /^\/g\/[^/]+\/c\/[a-f0-9-]+\/?$/i;
-    this._SORA_TASK_REGEX = /^\/t\/[a-f0-9-]+\/?$/i;
-    this._CODEX_TASK_REGEX = /^\/codex\/tasks\/[a-z0-9-_]+\/?$/i;
-    this._CHAT_THREAD_REGEX = /^\/c\/[a-f0-9-]+\/?$/i;
     // Fallback when no undone link is found
     this._FALLBACK_URL = 'https://chatgpt.com';
 
@@ -267,19 +257,7 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
    * @returns {boolean}
    */
   _is_thread_link(url) {
-    try {
-      const u = new URL(url);
-      if (!this._SUPPORTED_DOMAINS.includes(u.hostname)) return false;
-      const path = u.pathname;
-      return (
-        this._CHAT_THREAD_REGEX.test(path) ||
-        this._GPT_THREAD_REGEX.test(path) ||
-        this._CODEX_TASK_REGEX.test(path) ||
-        this._SORA_TASK_REGEX.test(path)
-      );
-    } catch (e) {
-      return false;
-    }
+    return is_chatgpt_thread_link(url);
   }
 
   /**
