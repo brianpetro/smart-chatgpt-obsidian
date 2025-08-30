@@ -144,6 +144,7 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
       this.refresh_button_el.addEventListener('click', () => {
         if (this.webview_el) {
           this.webview_el.reload();
+          this.plugin.env.events?.emit('webview:reloaded', { url: this.current_url });
           this.plugin.notices.show('Webview reloaded.');
         }
       });
@@ -159,6 +160,7 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
       this.copy_link_button_el.addEventListener('click', () => {
         if (this.current_url?.startsWith('http')) {
           navigator.clipboard.writeText(this.current_url);
+          this.plugin.env.events?.emit('url:copied', { url: this.current_url });
           this.plugin.notices.show('Copied current URL to clipboard.');
         }
       });
@@ -291,6 +293,7 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     if (this.mark_done_button_el) {
       this.mark_done_button_el.onclick = async () => {
         await this._mark_thread_done_in_codeblock(link_to_check);
+        this.plugin.env.events?.emit('thread:marked_done', { url: link_to_check });
         this.plugin.notices.show('Marked thread as done.');
         this._render_save_ui(this.current_url);
       };
