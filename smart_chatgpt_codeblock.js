@@ -236,12 +236,8 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     new_codex_opt.textContent = 'New Codex';
 
     const new_sora_opt = this.dropdown_el.createEl('option');
-    new_sora_opt.value = 'https://sora.com';
+    new_sora_opt.value = 'https://sora.chatgpt.com/drafts';
     new_sora_opt.textContent = 'New Sora';
-    // Add static options first
-    const new_operator_opt = this.dropdown_el.createEl('option');
-    new_operator_opt.value = 'https://operator.chatgpt.com';
-    new_operator_opt.textContent = 'New Operator';
     // Add links from the codeblock
     super.add_dropdown_options();
   }
