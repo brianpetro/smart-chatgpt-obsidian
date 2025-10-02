@@ -10,6 +10,7 @@ const CODEX_TASK_REGEX = /^\/codex\/tasks\/[a-z0-9-_]+\/?$/i;
 const CHAT_THREAD_REGEX = /^\/c\/[a-f0-9-]+\/?$/i;
 // sora 2
 const SORA_DRAFT_REGEX = /^\/d\/[a-z0-9-_]+\/?$/i;
+const SORA_PUB_REGEX = /^\/p\/s_[a-f0-9]+\/?$/i;
 // DEPRECATED sora 1
 const SORA_TASK_REGEX = /^\/t\/[a-f0-9-]+\/?$/i;
 
@@ -29,6 +30,7 @@ export function is_chatgpt_thread_link(url) {
       GPT_THREAD_REGEX.test(path) ||
       CODEX_TASK_REGEX.test(path) ||
       SORA_DRAFT_REGEX.test(path) ||
+      SORA_PUB_REGEX.test(path) ||
       SORA_TASK_REGEX.test(path) // DEPRECATED, but still used in some places
     );
   } catch {
