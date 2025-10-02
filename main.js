@@ -84,6 +84,9 @@ class SmartChatgptSettingTab extends PluginSettingTab {
 }
 
 export default class SmartChatgptPlugin extends Plugin {
+  get env () {
+    return window?.smart_env;
+  }
   /** @type {SmartChatgptPluginSettings} */
   settings = DEFAULT_SETTINGS;
 

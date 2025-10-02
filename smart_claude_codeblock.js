@@ -140,7 +140,7 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     this.refresh_button_el.addEventListener('click', () => {
       if (this.webview_el) {
         this.webview_el.reload();
-        this.plugin.env.events?.emit('webview:reloaded', { url: this.current_url });
+        this.plugin.env?.events?.emit('webview:reloaded', { url: this.current_url });
         this.plugin.notices.show('Webview reloaded.');
       }
     });
@@ -156,7 +156,7 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     this.copy_link_button_el.addEventListener('click', () => {
       if (this.current_url && this.current_url.startsWith('http')) {
         navigator.clipboard.writeText(this.current_url);
-        this.plugin.env.events?.emit('url:copied', { url: this.current_url });
+        this.plugin.env?.events?.emit('url:copied', { url: this.current_url });
         this.plugin.notices.show('Copied current URL to clipboard.');
       }
     });
@@ -261,7 +261,7 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     this._show_mark_done_button();
     this.mark_done_button_el.onclick = async () => {
       await this._mark_thread_done_in_codeblock(url);
-      this.plugin.env.events?.emit('conversation:marked_done', { url });
+      this.plugin.env?.events?.emit('conversation:marked_done', { url });
       this.plugin.notices.show('Marked conversation as done.');
       this._render_save_ui(this.current_url);
     };
