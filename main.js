@@ -114,7 +114,7 @@ export default class SmartChatgptPlugin extends Plugin {
       if (enabled.has(id)) {
         try {
           await this.app.plugins.disablePlugin(id);
-          this.env.events?.emit('plugin:conflict_disabled', { plugin_id: id });
+          this.env?.events?.emit('plugin:conflict_disabled', { plugin_id: id });
           this.notices.show(`Disabled conflicting plugin: ${id}`);
         } catch (e) { console.error(`Failed disabling ${id}:`, e); }
       }
