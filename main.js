@@ -14,6 +14,9 @@ import { SmartPerplexityCodeblock } from './smart_perplexity_codeblock.js';
 import { SmartGrokCodeblock }       from './smart_grok_codeblock.js';
 import { SmartAistudioCodeblock }   from './smart_aistudio_codeblock.js';
 
+// DEPRECATED view from sc-obsidian
+import { SmartChatGPTView } from "./src/views/sc_chatgpt.obsidian.js";
+
 /**
  * @typedef {Object} SmartChatgptPluginSettings
  * @property {number} iframe_height
@@ -98,6 +101,7 @@ export default class SmartChatgptPlugin extends Plugin {
 
     this.register_all();
     this.addSettingTab(new SmartChatgptSettingTab(this.app, this));
+    this.register_chatgpt_view();
   }
 
   async disable_conflicting_plugins() {
@@ -200,4 +204,28 @@ export default class SmartChatgptPlugin extends Plugin {
         this.registerMarkdownCodeBlockProcessor(lang, makeProcessor(Cls));
     });
   }
+
+  // MOVED FROM DEPRECATED CONNECTIONS PLUGIN
+  register_chatgpt_view() {
+    this.registerView(SmartChatGPTView.view_type, leaf => new SmartChatGPTView(leaf, this));
+    this.addCommand({
+      id: SmartChatGPTView.view_type,
+      name: "Open: " + SmartChatGPTView.display_text + " view",
+      callback: () => {
+        SmartChatGPTView.open(this.app.workspace);
+      }
+    });
+
+    // Dynamic accessor and opener for each view
+    // e.g. this.smart_connections_view and this.open_smart_connections_view()
+    const method_name = SmartChatGPTView.view_type
+      .replace("smart-", "")
+      .replace(/-/g, "_")
+    ;
+    Object.defineProperty(this, method_name, {
+      get: () => SmartChatGPTView.get_view(this.app.workspace)
+    });
+    this["open_" + method_name] = () => SmartChatGPTView.open(this.app.workspace);
+  }
+
 }
