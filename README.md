@@ -1,7 +1,7 @@
 > [!INFO] 2025-12-11 this page is a WIP, see https://smartconnections.app/smart-chat
 
 <h2 align="center">
-Chat with your vault, locally or with your favorite models
+Keep conversations where your notes live<br>
 </h2>
 
 > [!QUESTION] **Why juggle browser tabs or copied prompts?**
@@ -10,13 +10,17 @@ Chat with your vault, locally or with your favorite models
 > [!WARNING] **The Problem**
 > Switching between external chat tools and your notes breaks focus, loses context, and risks sending private data to the wrong place.
 
-> [!SUCCESS] **The Payoff**
+> [!SUCCESS] **What success looks like**
 > Stay in flow: start a thread, pull in notes with `@`, review context before sending, and answer follow-ups without leaving Obsidian.
+
+> [!FAILURE] **The cost of doing nothing**
+> Context keeps leaking across tools. You lose time re-reading notes, copy/pasting prompts, and second-guessing what was sent to which provider.
 
 # Smart Chat
 
+Smart Chat adds a dedicated chat view powered by the shared **Smart Environment** so your conversations stay close to your vault. Upgrade to Smart Chat Pro for cloud and advanced local provider workflows.
 
-Smart Chat adds a dedicated chat view powered by the shared **Smart Environment**. It keeps conversations close to your vault, and upgrades to Smart Chat Pro for local and cloud API provider workflows.
+![](./assets/smart-chatgpt-getting_started.gif)
 
 ## What Smart Chat does
 - Context-aware responses sourced from your vault via Smart Environment.
@@ -25,8 +29,8 @@ Smart Chat adds a dedicated chat view powered by the shared **Smart Environment*
 - Bring your own models: local (Ollama) or Smart Chat Pro providers (OpenAI, Anthropic, Gemini, Azure, and more).
 
 ## Core vs Pro
-- **Core**: 
-- **Smart Chat Pro**: API provider adapters, model routing per thread, streaming and tool-calling support via Smart Environment actions.
+- **Core**: Tools for your favorite chat interfaces directly in Obsidian.
+- **Pro**: API provider adapters, per-thread routing, streaming, and tool-calling support via Smart Environment actions.
 
 ## Quick start
 > [!TLDR] 3 steps
@@ -40,16 +44,10 @@ Smart Chat adds a dedicated chat view powered by the shared **Smart Environment*
 - Add API keys in **Settings → Smart Chat Pro** and pick the provider/model per thread.
 - Keep sensitive data local by only sending context to the providers you explicitly choose.
 
-## Use it
-- Start or resume threads from the Smart Chat view.
-- Type `@` to select notes for context; Smart Environment suggests relevant notes automatically.
-- Edit the system prompt per thread to steer responses.
-- Review retrieved context before sending so only the right notes are shared.
-
 ## Built for you
 > Smart Chat started as a way to keep conversations and context together. The Obsidian community has helped shape it into a flexible interface for local-first AI workflows.
 
-# Smart Chat codeblocks
+# Smart Chat codeblocks (legacy Smart ChatGPT)
 **Chat with ChatGPT, Claude, Gemini, and more—directly inside your Obsidian notes!** Keep your AI conversations organized and connected to your work, without ever leaving your vault.
 
 ![](./assets/smart-chatgpt-getting_started.gif)
