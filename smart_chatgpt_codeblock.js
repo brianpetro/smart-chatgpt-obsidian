@@ -289,7 +289,7 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     if (this.mark_done_button_el) {
       this.mark_done_button_el.onclick = async () => {
         await this._mark_thread_done_in_codeblock(link_to_check);
-        this.plugin.env?.events?.emit('thread:marked_done', { url: link_to_check });
+        this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url: link_to_check });
         this.plugin.notices.show('Marked thread as done.');
         this._render_save_ui(this.current_url);
       };

@@ -111,7 +111,7 @@ export class SmartChatCodeblock {
       const already_saved = await this._check_if_saved(link_to_save);
       if (!already_saved) {
         await this._insert_link_into_codeblock(link_to_save);
-        this.plugin.env?.events?.emit('thread:auto_saved_link', { url: link_to_save });
+        this.plugin.env?.events?.emit('chat_codeblock:saved_thread', { url: link_to_save });
         this.plugin.notices.show(`Auto-saved new ${this.constructor.name} thread link.`);
       }
     }

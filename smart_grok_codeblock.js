@@ -245,7 +245,7 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
     this._show_mark_done_button();
     this.mark_done_button_el.onclick = async () => {
       await this._mark_thread_done_in_codeblock(url);
-      this.plugin.env?.events?.emit('conversation:marked_done', { url });
+      this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url });
       this.plugin.notices.show('Marked conversation as done.');
       this._render_save_ui(this.current_url);
     };
