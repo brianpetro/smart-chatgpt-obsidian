@@ -3,7 +3,6 @@ import { is_chatgpt_thread_link } from './chatgpt_thread_link.js';
 
 const valid_threads = [
   'https://chatgpt.com/c/123e4567-e89b-12d3-a456-426614174000',
-  'https://operator.chatgpt.com/c/123e4567-e89b-12d3-a456-426614174000',
   'https://chatgpt.com/g/gpt-id/c/123e4567-e89b-12d3-a456-426614174000',
   'https://chatgpt.com/codex/tasks/sample-task',
   'https://sora.com/t/123e4567-e89b-12d3-a456-426614174000'
