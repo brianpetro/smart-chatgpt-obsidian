@@ -25,3 +25,24 @@
   height: 100%;
   border: 0;
 }
+
+.sc-external-chat-webview-hint {
+  color: var(--text-muted);
+}
+
+.sc-external-chat-webview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sc-no-webview .sc-external-chat-webview-frame {
+  padding: 12px;
+  min-height: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sc-no-webview .sc-external-chat-webview-frame webview {
+  display: none;
+}

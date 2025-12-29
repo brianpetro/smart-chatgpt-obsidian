@@ -1,3 +1,8 @@
+import { Platform, openExternal } from 'obsidian';
+import { format_dropdown_label, platform_label_from_url } from './dropdown_label.js';
+
+const MOBILE_HINT_TEXT = 'Webview unavailable on mobile. Use Open + Copy.';
+
 export class SmartChatCodeblock {
   constructor({ plugin, file, line_start, line_end, container_el, source, ctx }) {
     this.plugin = plugin;
@@ -9,6 +14,186 @@ export class SmartChatCodeblock {
     this.ctx = ctx;
     // overridden by subclasses
     this._FALLBACK_URL = 'https://smartconnections.app/?utm_source=chat-codeblock-fallback';
+
+    this.dropdown_container_el = null;
+    this.dropdown_el = null;
+    this.mobile_hint_el = null;
+
+    // Build context (temp key reused until a thread exists)
+    this._temp_context_key = '';
+
+    this._is_mobile = this._is_mobile_app();
+    this._supports_webview = this._supports_webview_app();
+
+    if (this.container_el?.classList) {
+      if (this._is_mobile) this.container_el.classList.add('sc-is-mobile');
+      if (!this._supports_webview) this.container_el.classList.add('sc-no-webview');
+    }
+
+    this._wrap_render_save_ui();
+    this._init_no_webview_click_intercepts();
+
+    // Inject Build context button into bottom row when it appears
+    this._init_build_context_button_injection();
+  }
+
+  _is_mobile_app() {
+    try {
+      if (Platform?.isMobileApp) return true;
+    } catch (_) {}
+
+    const app = this.plugin?.app || window?.app;
+    if (typeof app?.isMobile === 'boolean') return app.isMobile;
+
+    const ua = window?.navigator?.userAgent || '';
+    return /Android|iPhone|iPad|iPod/i.test(ua);
+  }
+
+  _supports_webview_app() {
+    if (this._is_mobile_app()) return false;
+    const app = this.plugin?.app || window?.app;
+    return typeof app?.getWebviewPartition === 'function';
+  }
+
+  _open_external_url(url) {
+    if (!url || typeof url !== 'string') return;
+    if (!url.startsWith('http')) return;
+    try {
+      window.open(url, '_external');
+    } catch (err) {
+      console.error('Failed opening external url:', url, err);
+    }
+  }
+
+  _wrap_render_save_ui() {
+    if (this._render_save_ui_wrapped) return;
+    if (typeof this._render_save_ui !== 'function') return;
+
+    const original_render_save_ui = this._render_save_ui.bind(this);
+    this._render_save_ui = async (url) => {
+      this._sync_dropdown_value(url);
+      const result = await original_render_save_ui(url);
+      await this._maybe_render_mark_active_ui(url);
+      return result;
+    };
+    this._render_save_ui_wrapped = true;
+  }
+
+  async _maybe_render_mark_active_ui(url) {
+    if (!this.mark_done_button_el) return;
+    if (!url || typeof url !== 'string') return;
+    if (!url.startsWith('http')) return;
+
+    if (typeof this._is_thread_link === 'function' && !this._is_thread_link(url)) {
+      // Restore label if we previously changed it
+      const original = this.mark_done_button_el.dataset?.scMarkDoneLabel;
+      if (original) this.mark_done_button_el.textContent = original;
+      return;
+    }
+
+    if (!this.mark_done_button_el.dataset?.scMarkDoneLabel) {
+      this.mark_done_button_el.dataset.scMarkDoneLabel = this.mark_done_button_el.textContent || 'Mark done';
+    }
+
+    if (typeof this._check_if_done !== 'function') return;
+
+    const normalized = this._normalize_url(url);
+    const is_done = await this._check_if_done(normalized);
+
+    if (!is_done) {
+      // Ensure label is not stuck as "Mark active"
+      const original = this.mark_done_button_el.dataset?.scMarkDoneLabel;
+      if (original) this.mark_done_button_el.textContent = original;
+      return;
+    }
+
+    // Done -> show "Mark active"
+    this.mark_done_button_el.textContent = 'Mark active';
+
+    if (typeof this._show_mark_done_button === 'function') {
+      this._show_mark_done_button();
+    } else {
+      // Fallback: unhide by style/class when helpers do not exist
+      try { this.mark_done_button_el.style.display = ''; } catch (_) {}
+      try { this.mark_done_button_el.classList.remove('sc-hidden'); } catch (_) {}
+    }
+
+    this.mark_done_button_el.onclick = async () => {
+      await this._mark_thread_active_in_codeblock(normalized);
+      this.plugin.env?.events?.emit('chat_codeblock:marked_active', { url: normalized });
+      this.plugin.notices.show('Marked thread as active.');
+      await this._render_save_ui(this.current_url || normalized);
+    };
+  }
+
+  _select_has_option_value(value) {
+    if (!this.dropdown_el) return false;
+    try {
+      return Array.from(this.dropdown_el.options).some(opt => opt.value === value);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  _sync_dropdown_value(url) {
+    if (!this.dropdown_el) return;
+    if (!url || typeof url !== 'string') return;
+
+    // Prefer exact match
+    if (this._select_has_option_value(url)) {
+      this.dropdown_el.value = url;
+      return;
+    }
+
+    // Then try normalized match (strip query/hash)
+    const normalized = this._normalize_url(url);
+    if (normalized && normalized !== url && this._select_has_option_value(normalized)) {
+      this.dropdown_el.value = normalized;
+    }
+  }
+
+  _init_no_webview_click_intercepts() {
+    if (!this.container_el?.addEventListener) return;
+    if (this._no_webview_click_intercepts_inited) return;
+    if (this._supports_webview) return;
+
+    this.container_el.addEventListener('click', (ev) => {
+      const target = ev.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const button = target.closest('button');
+      if (!button) return;
+
+      const label = (button.textContent || '').trim().toLowerCase();
+
+      // Ensure "Open" always opens externally in no-webview environments (mobile).
+      if (label.startsWith('open')) {
+        const url = this.current_url || this.initial_link || '';
+        if (url.startsWith('http')) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          this._open_external_url(url);
+        }
+        return;
+      }
+
+      // Prevent refresh from throwing (webview.reload is not available).
+      if (label === 'refresh') {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        this.plugin?.notices?.show?.('Webview not available on mobile. Use Open in browser.');
+        return;
+      }
+
+      // Grow/Contain is webview-layout focused; disable to avoid confusing UX.
+      if (label === 'grow' || label === 'contain') {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        return;
+      }
+    }, true);
+
+    this._no_webview_click_intercepts_inited = true;
   }
 
   /**
@@ -46,13 +231,23 @@ export class SmartChatCodeblock {
    */
   _build_dropdown(parent_el=null) {
     if (!this.dropdown_el) {
-      if(!parent_el) throw new Error('Parent element is required to build dropdown');
-      this.dropdown_el = parent_el.createEl('select', { cls: 'sc-link-dropdown' });
+      const dropdown_parent = parent_el || this.dropdown_container_el;
+      if(!dropdown_parent) throw new Error('Parent element is required to build dropdown');
+      this.dropdown_container_el = dropdown_parent.createEl('div', { cls: 'sc-dropdown-container' });
+      this.dropdown_el = this.dropdown_container_el.createEl('select', { cls: 'sc-link-dropdown' });
       this.dropdown_el.addEventListener('change', () => {
         const new_link = this.dropdown_el.value;
+
+        // Always update current url, even when webviews do not work.
+        this.current_url = new_link;
         if (this.webview_el) {
           this.webview_el.setAttribute('src', new_link);
-          this.current_url = new_link;
+        }
+
+        // In no-webview environments, navigation events will never fire.
+        // Trigger UI refresh immediately so Mark done / status reflect the selection.
+        if (!this._supports_webview && typeof this._render_save_ui === 'function') {
+          this._render_save_ui(new_link);
         }
       });
     }
@@ -60,7 +255,28 @@ export class SmartChatCodeblock {
 
 
     this.add_dropdown_options();
-    this.dropdown_el.value = this.current_url || this.initial_link;
+
+    const preferred = this.current_url || this.initial_link || this._FALLBACK_URL;
+    this._sync_dropdown_value(preferred);
+    if (!this.dropdown_el.value) {
+      this.dropdown_el.value = this._FALLBACK_URL;
+      this.current_url = this._FALLBACK_URL;
+    }
+
+    if (!this.mobile_hint_el && !this._supports_webview && this.dropdown_container_el) {
+      this._render_mobile_hint();
+    }
+  }
+
+  _render_mobile_hint() {
+    this.mobile_hint_el = this.dropdown_container_el?.createEl('div', {
+      cls: 'sc-mobile-hint',
+      text: MOBILE_HINT_TEXT
+    });
+  }
+
+  _get_dropdown_label(url) {
+    return format_dropdown_label(url, this.platform_label || platform_label_from_url(url));
   }
 
   add_dropdown_options() {
@@ -71,14 +287,15 @@ export class SmartChatCodeblock {
     for (const link_obj of this.links) {
       const option_el = this.dropdown_el.createEl('option');
       option_el.value = link_obj.url;
+      const label = this._get_dropdown_label(link_obj.url);
       option_el.textContent = link_obj.done
-        ? ('✓ ' + link_obj.url)
-        : link_obj.url;
+        ? ('✓ ' + label)
+        : label;
     }
   }
 
   _init_navigation_events() {
-    if (!this.webview_el) return;
+    if (!this.webview_el || !this._supports_webview) return;
     this.webview_el.addEventListener('did-finish-load', () => {
       this.webview_el.setAttribute('data-did-finish-load', 'true');
     });
@@ -135,7 +352,7 @@ export class SmartChatCodeblock {
   }
 
   /**
-   * Injects a <style id="sc-grow-css"> tag with the “grow” rules.
+   * Injects a <style id="sc-grow-css"> tag with the "grow" rules.
    */
   _applyGrowCss() {
     if (document.getElementById('sc-grow-css')) return;
@@ -171,4 +388,169 @@ export class SmartChatCodeblock {
 
   // Override this method in subclasses to extract links from the source based on platform-specific logic
   _extract_links(source) {}
+
+  /* ------------------------------------------------------------------ */
+  /* Build context button                                                */
+  /* ------------------------------------------------------------------ */
+
+  _init_build_context_button_injection() {
+    if (this._build_context_injection_inited) return;
+    this._build_context_injection_inited = true;
+
+    if (!this.container_el) return;
+
+    const try_inject = () => {
+      const bottom_row_el = this.container_el.querySelector?.('.sc-bottom-row');
+      if (!(bottom_row_el instanceof HTMLElement)) return false;
+      this._ensure_build_context_button(bottom_row_el);
+      return true;
+    };
+
+    if (try_inject()) return;
+
+    if (typeof MutationObserver === 'undefined') return;
+
+    this._build_context_observer = new MutationObserver(() => {
+      if (try_inject()) {
+        try { this._build_context_observer.disconnect(); } catch (_) {}
+        this._build_context_observer = null;
+      }
+    });
+
+    try {
+      this._build_context_observer.observe(this.container_el, { childList: true, subtree: true });
+    } catch (err) {
+      console.error('Failed observing container for build-context injection:', err);
+    }
+  }
+
+  _ensure_build_context_button(bottom_row_el) {
+    if (!(bottom_row_el instanceof HTMLElement)) return;
+
+    const existing = bottom_row_el.querySelector?.('button.sc-build-context-button');
+    if (existing instanceof HTMLButtonElement) {
+      // Ensure handler is set (no addEventListener duplication; uses onclick)
+      this._bind_build_context_click(existing);
+      return;
+    }
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sc-build-context-button';
+    btn.textContent = 'Build context';
+
+    // Insert before last button (typically Grow) so mobile "last-child" hiding stays correct.
+    const buttons = bottom_row_el.querySelectorAll?.('button') || [];
+    const last_btn = buttons.length ? buttons[buttons.length - 1] : null;
+    if (last_btn && last_btn.parentNode === bottom_row_el) {
+      bottom_row_el.insertBefore(btn, last_btn);
+    } else {
+      bottom_row_el.appendChild(btn);
+    }
+
+    this._bind_build_context_click(btn);
+  }
+
+  _bind_build_context_click(btn) {
+    if (!(btn instanceof HTMLButtonElement)) return;
+
+    // No addEventListener: avoids duplicate listeners by construction.
+    btn.onclick = () => {
+      const url = this.current_url || this.initial_link || '';
+      const context_key = this._resolve_context_key(url);
+      const env = this.plugin.env;
+      if(!env) return console.warn('No plugin.env available for context selector');
+      const ctx = env.smart_contexts.get(context_key)
+        || env.smart_contexts.new_context({key: context_key})
+      ;
+      const temp_ctx = env.smart_contexts.get('temp-chat-context');
+      console.log({context_key, ctx, temp_ctx});
+      if(temp_ctx) {
+        // Merge temp context into the real one
+        const items_to_add = Object.keys(temp_ctx.data.context_items);
+        console.log({context_key, items_to_add});
+        ctx.add_items(items_to_add);
+        temp_ctx.delete();
+        temp_ctx.collection.process_save_queue();
+      }
+      ctx.emit_event('context_selector:open');
+    };
+  }
+
+  _resolve_context_key(url) {
+    const thread_key = this._resolve_thread_context_key(url);
+    if (thread_key) return thread_key;
+
+    if (this._temp_context_key) return this._temp_context_key;
+    this._temp_context_key = `temp-chat-context`;
+    return this._temp_context_key;
+  }
+
+  _resolve_thread_context_key(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (!url.startsWith('http')) return null;
+
+    if (typeof this._is_thread_link === 'function' && !this._is_thread_link(url)) {
+      return null;
+    }
+
+    try {
+      const u = new URL(this._normalize_url(url));
+      const segments = u.pathname.split('/').filter(Boolean);
+      const thread_id = segments[segments.length - 1] || '';
+      if (!thread_id) return null;
+      return `${u.hostname}:${thread_id}`;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Mark active support                                                 */
+  /* ------------------------------------------------------------------ */
+
+  async _get_codeblock_boundaries(file_data) {
+    if (typeof this._find_codeblock_boundaries !== 'function') {
+      return [this.line_start, this.line_end];
+    }
+    try {
+      const res = this._find_codeblock_boundaries(file_data);
+      if (res && typeof res.then === 'function') return await res;
+      return res;
+    } catch (err) {
+      console.error('Error resolving codeblock boundaries:', err);
+      return [this.line_start, this.line_end];
+    }
+  }
+
+  async _mark_thread_active_in_codeblock(url) {
+    if (!this.file) return;
+    if (!url || typeof url !== 'string') return;
+
+    try {
+      const raw_data = await this.plugin.app.vault.read(this.file);
+      const [start, end] = await this._get_codeblock_boundaries(raw_data);
+      if (start < 0 || end < 0 || end <= start) return;
+
+      const normalized = this._normalize_url(url);
+      const lines = raw_data.split('\n');
+      let changed = false;
+
+      for (let i = start + 1; i < end; i++) {
+        const trimmed = lines[i].trim();
+        if (!trimmed.startsWith('chat-done:: ')) continue;
+
+        if (lines[i].includes(url) || lines[i].includes(normalized)) {
+          lines[i] = lines[i].replace('chat-done:: ', 'chat-active:: ');
+          changed = true;
+          break;
+        }
+      }
+
+      if (!changed) return;
+      await this.plugin.app.vault.modify(this.file, lines.join('\n'));
+    } catch (err) {
+      console.error('Error marking thread active:', err);
+    }
+  }
 }

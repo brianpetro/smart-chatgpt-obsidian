@@ -45,3 +45,34 @@
 .sc-link-dropdown {
   max-width: 300px;
 }
+
+.sc-dropdown-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sc-mobile-hint {
+  display: none;
+  color: var(--text-muted);
+  font-size: 0.9em;
+  line-height: 1.2;
+}
+
+/* ------------------------------------------------------------------ */
+/* Mobile / no-webview fallback                                        */
+/* ------------------------------------------------------------------ */
+
+.sc-no-webview .sc-webview {
+  display: none;
+}
+
+.sc-no-webview .sc-mobile-hint {
+  display: block;
+}
+
+/* Hide buttons that depend on the embedded webview (Refresh + Grow/Contain). */
+.sc-no-webview .sc-bottom-row button:first-child,
+.sc-no-webview .sc-bottom-row button:last-child {
+  display: none;
+}
