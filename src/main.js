@@ -37,32 +37,9 @@ export default class SmartChatgptPlugin extends SmartPlugin {
     this.SmartEnv.create(this, {});
     await this.loadSettings();
 
-    await this.disable_conflicting_plugins();
-
     this.register_all();
     this.addSettingTab(new SmartChatgptSettingTab(this.app, this));
     this.register_chatgpt_view();
-  }
-
-  async disable_conflicting_plugins() {
-    const conflictIds = [
-      'smart-claude',
-      'smart-gemini',
-      'smart-deepseek',
-      'smart-perplexity',
-      'smart-grok',
-      'smart-aistudio'
-    ];
-    const enabled = this.app.plugins.enabledPlugins ?? new Set();
-    for (const id of conflictIds) {
-      if (enabled.has(id)) {
-        try {
-          await this.app.plugins.disablePlugin(id);
-          this.env?.events?.emit('plugin:conflict_disabled', { plugin_id: id });
-          this.notices.show(`Disabled conflicting plugin: ${id}`);
-        } catch (e) { console.error(`Failed disabling ${id}:`, e); }
-      }
-    }
   }
 
   async loadSettings() {
