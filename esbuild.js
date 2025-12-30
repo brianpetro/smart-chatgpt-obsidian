@@ -54,7 +54,11 @@ esbuild.build({
     'electron',
     'obsidian',
     'crypto',
+    '@huggingface/transformers',
   ],
+  loader: {
+    '.css': 'text',
+  },
   define: {
   },
 }).then(() => {

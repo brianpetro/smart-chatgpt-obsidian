@@ -34,7 +34,7 @@ export default class SmartChatgptPlugin extends SmartPlugin {
   settings = DEFAULT_SETTINGS;
 
   async onload() {
-    this.notices = { show(msg) { new Notice(msg); } };
+    this.SmartEnv.create(this, {});
     await this.loadSettings();
 
     await this.disable_conflicting_plugins();
