@@ -7,6 +7,7 @@ const HOST_PLATFORM_LABELS = {
   'chat.deepseek.com': 'DeepSeek',
   'perplexity.ai': 'Perplexity',
   'grok.com': 'Grok',
+  'www.grok.com': 'Grok',
   'sora.com': 'Sora',
   'sora.chatgpt.com': 'Sora'
 };

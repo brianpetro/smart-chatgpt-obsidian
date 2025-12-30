@@ -1,13 +1,15 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
+import { is_grok_thread_link } from '../utils/smart_chat_codeblock.helpers.js';
+
 export class SmartGrokCodeblock extends SmartChatCodeblock {
   /**
    * @param {Object} options
    * @param {import('obsidian').Plugin} options.plugin – Parent plugin instance.
-   * @param {import('obsidian').TFile} options.file – File containing the code‑block.
-   * @param {number} options.line_start – Start line of the code‑block.
-   * @param {number} options.line_end – End line of the code‑block.
+   * @param {import('obsidian').TFile} options.file – File containing the code-block.
+   * @param {number} options.line_start – Start line of the code-block.
+   * @param {number} options.line_end – End line of the code-block.
    * @param {HTMLElement} options.container_el – Element where this UI renders.
-   * @param {string} options.source – Raw text inside the ```smart-grok code‑block.
+   * @param {string} options.source – Raw text inside the ```smart-grok code-block.
    */
   constructor(opts = {}) {
     super(opts);
@@ -17,144 +19,10 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
     this._FALLBACK_URL = 'https://grok.com/chat';
     const not_done_link_obj = this.links.find(obj => !obj.done);
-    this.initial_link = not_done_link_obj
-      ? not_done_link_obj.url
-      : this._FALLBACK_URL
-    ;
-
-    // Updated to the new Grok chat path
-    this.THREAD_PREFIX = 'https://grok.com/chat/';
+    this.initial_link = not_done_link_obj ? not_done_link_obj.url : this._FALLBACK_URL;
 
     this.last_detected_url = this.initial_link;
     this.current_url = this.initial_link;
-
-    this.dropdown_el = null;
-    this.mark_done_button_el = null;
-    this.status_text_el = null;
-    this.webview_el = null;
-    this.refresh_button_el = null;
-    this.open_browser_button_el = null;
-    this.copy_link_button_el = null;
-    this.grow_contain_button_el = null;
-  }
-
-  _extract_links(codeblock_source) {
-    const lines = codeblock_source.split('\n');
-    const result = [];
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      if (trimmed.startsWith('chat-done:: ')) {
-        const tokens = trimmed.split(/\s+/);
-        const possibleUrl = tokens[tokens.length - 1];
-        if (possibleUrl.startsWith('http')) result.push({ url: possibleUrl, done: true });
-        continue;
-      }
-      if (trimmed.startsWith('chat-active:: ')) {
-        const tokens = trimmed.split(/\s+/);
-        const possibleUrl = tokens[tokens.length - 1];
-        if (possibleUrl.startsWith('http')) result.push({ url: possibleUrl, done: false });
-        continue;
-      }
-
-      const found = line.match(this.link_regex) || [];
-      for (const f of found) result.push({ url: f, done: false });
-    }
-    return result;
-  }
-
-  async build() {
-    await this._prefix_missing_lines_in_file();
-    const updated_source = await this._get_codeblock_source_from_file();
-    if (updated_source) this.source = updated_source;
-
-    this.links = this._extract_links(this.source);
-    const not_done_link_obj = this.links.find(obj => !obj.done);
-    this.initial_link = not_done_link_obj ? not_done_link_obj.url : 'https://grok.com/chat';
-    this.last_detected_url = this.initial_link;
-    this.current_url = this.initial_link;
-
-    /* Top row (dropdown + status) */
-    const top_row_el = this.container_el.createEl('div', { cls: 'sc-top-row' });
-    top_row_el.style.display = 'flex';
-    top_row_el.style.gap = '8px';
-    top_row_el.style.marginBottom = '8px';
-    top_row_el.style.alignItems = 'center';
-
-    this._build_dropdown(top_row_el);
-
-    this.mark_done_button_el = top_row_el.createEl('button', { text: 'Mark Done' });
-    this.mark_done_button_el.style.display = 'none';
-
-    this.status_text_el = top_row_el.createEl('span', { text: '' });
-    this.status_text_el.style.marginLeft = 'auto';
-
-    /* Web‑view */
-    const webview_height = this.plugin.settings.iframe_height || 800;
-    this.webview_el = this.container_el.createEl('webview', { cls: 'sc-webview' });
-    this.webview_el.setAttribute('partition', this.plugin.app.getWebviewPartition());
-    this.webview_el.setAttribute('allowpopups', '');
-    this.webview_el.setAttribute(
-      'useragent',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.191 Safari/537.36'
-    );
-    this.webview_el.setAttribute('webpreferences', 'nativeWindowOpen=yes, contextIsolation=yes');
-    this.webview_el.style.setProperty('--sc-webview-height', webview_height + 'px');
-    this.webview_el.setAttribute('src', this.initial_link);
-
-    this.webview_el.addEventListener('dom-ready', () => {
-      const factor = this.plugin.settings.zoom_factor || 1.0;
-      this.webview_el.setZoomFactor(factor);
-    });
-    this._init_navigation_events();
-
-    this._render_footer();
-
-    this._render_save_ui(this.initial_link);
-  }
-
-  async _get_codeblock_source_from_file() {
-    if (!this.file) return null;
-    try {
-      const raw_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(raw_data);
-      if (start < 0 || end <= start) return null;
-      return raw_data.split('\n').slice(start + 1, end).join('\n');
-    } catch (err) {
-      console.error('Error reading file for updated code‑block content:', err);
-      return null;
-    }
-  }
-
-  async _prefix_missing_lines_in_file() {
-    if (!this.file) return;
-    try {
-      const file_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(file_data);
-      if (start < 0 || end < 0) return;
-
-      const lines = file_data.split('\n');
-      let changed = false;
-      for (let i = start + 1; i < end; i++) {
-        const line = lines[i];
-        const trimmed = line.trim();
-        if (
-          trimmed.startsWith('chat-active:: ') ||
-          trimmed.startsWith('chat-done:: ')
-        ) continue;
-
-        if ((line.match(this.link_regex) || []).length > 0) {
-          const ts = Math.floor(Date.now() / 1000);
-          lines[i] = `chat-active:: ${ts} ${trimmed}`;
-          changed = true;
-        }
-      }
-
-      if (changed) await this.plugin.app.vault.modify(this.file, lines.join('\n'));
-    } catch (err) {
-      console.error('Error prefixing lines in file:', err);
-    }
   }
 
   _find_codeblock_boundaries(file_data) {
@@ -172,15 +40,18 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
         current_start = -1;
       }
     }
+
     if (!blocks.length) return [this.line_start, this.line_end];
     if (blocks.length === 1) return [blocks[0].start, blocks[0].end];
 
-    for (const b of blocks) if (b.start <= this.line_start && b.end >= this.line_end) return [b.start, b.end];
+    for (const b of blocks) {
+      if (b.start <= this.line_start && b.end >= this.line_end) return [b.start, b.end];
+    }
     return [blocks[0].start, blocks[0].end];
   }
 
   _is_thread_link(url) {
-    return url.startsWith(this.THREAD_PREFIX) && url.length > this.THREAD_PREFIX.length;
+    return is_grok_thread_link(url);
   }
 
   async _render_save_ui(url) {
@@ -196,7 +67,8 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
       return;
     }
 
-    const is_done = await this._check_if_done(url);
+    const link_to_check = this._normalize_url(url);
+    const is_done = await this._check_if_done(link_to_check);
     if (is_done) {
       this._set_status_text('This conversation is marked done.');
       return;
@@ -204,30 +76,22 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
     this._show_mark_done_button();
     this.mark_done_button_el.onclick = async () => {
-      await this._mark_thread_done_in_codeblock(url);
-      this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url });
+      await this._mark_thread_done_in_codeblock(link_to_check);
+      this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url: link_to_check });
       this.plugin.notices.show('Marked conversation as done.');
       this._render_save_ui(this.current_url);
     };
   }
 
-  _set_status_text(text) {
-    if (this.status_text_el) this.status_text_el.textContent = text;
-  }
-  _show_mark_done_button() {
-    if (this.mark_done_button_el) this.mark_done_button_el.style.display = '';
-  }
-  _hide_mark_done_button() {
-    if (this.mark_done_button_el) this.mark_done_button_el.style.display = 'none';
-  }
-
-  /* ─── Persistence checks & updates ─────────────────────────────────────── */
-
   async _check_if_saved(url) {
     if (!this.file) return false;
+
+    const normalized = this._normalize_url(url);
+    const candidates = Array.from(new Set([url, normalized].filter(Boolean)));
+
     try {
       const raw_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(raw_data);
+      const [start, end] = await this._get_codeblock_boundaries(raw_data);
       if (start < 0 || end <= start) return false;
 
       const lines = raw_data.split('\n').slice(start + 1, end);
@@ -235,8 +99,10 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
         const trimmed = line.trim();
         if (trimmed.startsWith('chat-active:: ') || trimmed.startsWith('chat-done:: ')) {
           const lastToken = trimmed.split(/\s+/).pop();
-          if (lastToken === url) return true;
-        } else if (line.includes(url)) return true;
+          if (candidates.includes(lastToken)) return true;
+        } else {
+          if (candidates.some(c => line.includes(c))) return true;
+        }
       }
       return false;
     } catch (err) {
@@ -247,18 +113,22 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
   async _check_if_done(url) {
     if (!this.file) return false;
+
+    const normalized = this._normalize_url(url);
+    const candidates = Array.from(new Set([url, normalized].filter(Boolean)));
+
     try {
       const raw_data = await this.plugin.app.vault.read(this.file);
-      const [start, end] = await this._find_codeblock_boundaries(raw_data);
+      const [start, end] = await this._get_codeblock_boundaries(raw_data);
       if (start < 0 || end <= start) return false;
 
       const lines = raw_data.split('\n').slice(start + 1, end);
       for (const line of lines) {
         const trimmed = line.trim();
-        if (trimmed.startsWith('chat-done:: ')) {
-          const lastToken = trimmed.split(/\s+/).pop();
-          if (lastToken === url) return true;
-        }
+        if (!trimmed.startsWith('chat-done:: ')) continue;
+
+        const lastToken = trimmed.split(/\s+/).pop();
+        if (candidates.includes(lastToken)) return true;
       }
       return false;
     } catch (err) {
@@ -269,16 +139,22 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
   async _mark_thread_done_in_codeblock(url) {
     if (!this.file) return;
+
+    const normalized = this._normalize_url(url);
+    const candidates = Array.from(new Set([url, normalized].filter(Boolean)));
+
     const fresh_data = await this.plugin.app.vault.read(this.file);
     const lines = fresh_data.split('\n');
 
-    const [start, end] = await this._find_codeblock_boundaries(fresh_data);
+    const [start, end] = await this._get_codeblock_boundaries(fresh_data);
     if (start < 0 || end < 0) return;
 
     let done_index = -1;
     for (let i = start + 1; i < end; i++) {
       const trimmed = lines[i].trim();
-      if (trimmed.startsWith('chat-active:: ') && trimmed.includes(url)) {
+      if (!trimmed.startsWith('chat-active:: ')) continue;
+
+      if (candidates.some(c => trimmed.includes(c))) {
         lines[i] = lines[i].replace('chat-active:: ', 'chat-done:: ');
         done_index = i;
         break;
@@ -289,11 +165,11 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
     const next_url = this._find_next_undone_url(lines.join('\n'), start, end, done_index);
     if (next_url) {
-      this.webview_el.setAttribute('src', next_url);
+      this.webview_el?.setAttribute('src', next_url);
       this.current_url = next_url;
     } else {
-      this.webview_el.setAttribute('src', 'https://grok.com/chat');
-      this.current_url = 'https://grok.com/chat';
+      this.webview_el?.setAttribute('src', this._FALLBACK_URL);
+      this.current_url = this._FALLBACK_URL;
     }
   }
 

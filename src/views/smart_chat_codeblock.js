@@ -1,5 +1,17 @@
-import { Platform, openExternal } from 'obsidian';
+import { Platform } from 'obsidian';
 import { format_dropdown_label, platform_label_from_url } from '../utils/dropdown_label.js';
+import {
+  extract_links_from_source,
+  normalize_url_value,
+  prefix_missing_chat_lines,
+  resolve_initial_fallback_url,
+  resolve_initial_link_from_links
+} from '../utils/smart_chat_codeblock.helpers.js';
+
+const DEFAULT_WEBVIEW_USERAGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.191 Safari/537.36';
+const DEFAULT_WEBVIEW_PREFERENCES = 'nativeWindowOpen=yes, contextIsolation=yes';
+
 const footer_button_labels = () => [
   'Refresh',
   'Build context',
@@ -7,7 +19,6 @@ const footer_button_labels = () => [
   'Copy link',
   'Grow'
 ];
-
 
 const MOBILE_HINT_TEXT = 'Webview unavailable on mobile. Use Open + Copy.';
 
@@ -20,14 +31,30 @@ export class SmartChatCodeblock {
     this.container_el = container_el;
     this.source = source;
     this.ctx = ctx;
-    // overridden by subclasses
+
     this._FALLBACK_URL = 'https://smartconnections.app/?utm_source=chat-codeblock-fallback';
+    this._INITIAL_FALLBACK_URL = '';
+
+    this.link_regex = /(https?:\/\/[^\s]+)/g;
+    this.links = [];
+
+    this.initial_link = '';
+    this.last_detected_url = '';
+    this.current_url = '';
 
     this.dropdown_container_el = null;
     this.dropdown_el = null;
     this.mobile_hint_el = null;
 
-    // Build context (temp key reused until a thread exists)
+    this.mark_done_button_el = null;
+    this.status_text_el = null;
+    this.webview_el = null;
+
+    this.refresh_button_el = null;
+    this.open_browser_button_el = null;
+    this.copy_link_button_el = null;
+    this.grow_contain_button_el = null;
+
     this._temp_context_key = '';
 
     this._is_mobile = this._is_mobile_app();
@@ -40,6 +67,113 @@ export class SmartChatCodeblock {
 
     this._wrap_render_save_ui();
     this._init_no_webview_click_intercepts();
+  }
+
+  async build() {
+    if (!this.container_el?.createEl) return;
+
+    this._reset_dom_refs();
+    try {
+      this.container_el.empty();
+    } catch (_) {}
+
+    await this._prefix_missing_lines_in_file();
+
+    const updated_source = await this._get_codeblock_source_from_file();
+    if (typeof updated_source === 'string') {
+      this.source = updated_source;
+    }
+
+    this.links = this._extract_links(this.source) || [];
+    this.initial_link = this._resolve_initial_link();
+    this.current_url = this.initial_link;
+    this.last_detected_url = this.initial_link;
+
+    this._build_standard_ui();
+
+    if (this.webview_el && this.current_url?.startsWith('http')) {
+      this.webview_el.setAttribute('src', this.current_url);
+    }
+
+    if (typeof this._render_save_ui === 'function') {
+      await this._render_save_ui(this.current_url);
+    }
+  }
+
+  _reset_dom_refs() {
+    this.dropdown_container_el = null;
+    this.dropdown_el = null;
+    this.mobile_hint_el = null;
+
+    this.mark_done_button_el = null;
+    this.status_text_el = null;
+    this.webview_el = null;
+
+    this.refresh_button_el = null;
+    this.open_browser_button_el = null;
+    this.copy_link_button_el = null;
+    this.grow_contain_button_el = null;
+  }
+
+  _get_initial_fallback_url() {
+    return resolve_initial_fallback_url({
+      initial_fallback_url: this._INITIAL_FALLBACK_URL,
+      fallback_url: this._FALLBACK_URL
+    });
+  }
+
+  _resolve_initial_link() {
+    return resolve_initial_link_from_links({
+      links: this.links,
+      initial_fallback_url: this._INITIAL_FALLBACK_URL,
+      fallback_url: this._FALLBACK_URL
+    });
+  }
+
+  _build_standard_ui() {
+    const top_row_el = this.container_el.createEl('div', { cls: 'sc-top-row' });
+
+    this._build_dropdown(top_row_el);
+
+    this.mark_done_button_el = top_row_el.createEl('button', {
+      text: this._MARK_DONE_LABEL || 'Mark done',
+      cls: 'sc-mark-done-button sc-hidden'
+    });
+    this._hide_mark_done_button();
+
+    this.status_text_el = top_row_el.createEl('span', {
+      text: '',
+      cls: 'sc-status-text'
+    });
+
+    if (this._supports_webview) {
+      const webview_height = this.plugin?.settings?.iframe_height || 800;
+
+      this.webview_el = this.container_el.createEl('webview', { cls: 'sc-webview' });
+      this.webview_el.setAttribute('partition', this.plugin.app.getWebviewPartition());
+      this.webview_el.setAttribute('allowpopups', '');
+      this.webview_el.setAttribute('useragent', DEFAULT_WEBVIEW_USERAGENT);
+      this.webview_el.setAttribute('webpreferences', DEFAULT_WEBVIEW_PREFERENCES);
+      this.webview_el.style.setProperty('--sc-webview-height', webview_height + 'px');
+
+      const initial_src = this.current_url || this.initial_link || this._FALLBACK_URL;
+      if (initial_src?.startsWith('http')) {
+        this.webview_el.setAttribute('src', initial_src);
+      }
+
+      this.webview_el.addEventListener('dom-ready', () => {
+        const factor = this.plugin?.settings?.zoom_factor || 1.0;
+        try {
+          this.webview_el.setZoomFactor(factor);
+        } catch (_) {}
+      });
+
+      this._init_navigation_events();
+    } else {
+      this.webview_el = null;
+    }
+
+    this._render_footer();
   }
 
   _is_mobile_app() {
@@ -70,6 +204,69 @@ export class SmartChatCodeblock {
     }
   }
 
+  async _get_codeblock_source_from_file() {
+    if (!this.file) return null;
+    try {
+      const raw_data = await this.plugin.app.vault.read(this.file);
+      const [start, end] = await this._get_codeblock_boundaries(raw_data);
+      if (start < 0 || end < 0 || end <= start) return null;
+      const lines = raw_data.split('\n').slice(start + 1, end);
+      return lines.join('\n');
+    } catch (err) {
+      console.error('Error reading file for updated codeblock content:', err);
+      return null;
+    }
+  }
+
+  async _prefix_missing_lines_in_file() {
+    if (!this.file) return;
+
+    try {
+      const raw_data = await this.plugin.app.vault.read(this.file);
+      const [start, end] = await this._get_codeblock_boundaries(raw_data);
+      if (start < 0 || end < 0) return;
+
+      const { lines, changed } = prefix_missing_chat_lines({
+        lines: raw_data.split('\n'),
+        start,
+        end,
+        link_regex: this.link_regex
+      });
+
+      if (changed) {
+        await this.plugin.app.vault.modify(this.file, lines.join('\n'));
+      }
+    } catch (err) {
+      console.error('Error prefixing lines in file:', err);
+    }
+  }
+
+  _set_status_text(text) {
+    if (this.status_text_el) {
+      this.status_text_el.textContent = text || '';
+    }
+  }
+
+  _show_mark_done_button() {
+    if (!this.mark_done_button_el) return;
+    try {
+      this.mark_done_button_el.classList.remove('sc-hidden');
+    } catch (_) {}
+    try {
+      this.mark_done_button_el.style.display = '';
+    } catch (_) {}
+  }
+
+  _hide_mark_done_button() {
+    if (!this.mark_done_button_el) return;
+    try {
+      this.mark_done_button_el.classList.add('sc-hidden');
+    } catch (_) {}
+    try {
+      this.mark_done_button_el.style.display = 'none';
+    } catch (_) {}
+  }
+
   _wrap_render_save_ui() {
     if (this._render_save_ui_wrapped) return;
     if (typeof this._render_save_ui !== 'function') return;
@@ -90,14 +287,14 @@ export class SmartChatCodeblock {
     if (!url.startsWith('http')) return;
 
     if (typeof this._is_thread_link === 'function' && !this._is_thread_link(url)) {
-      // Restore label if we previously changed it
       const original = this.mark_done_button_el.dataset?.scMarkDoneLabel;
       if (original) this.mark_done_button_el.textContent = original;
       return;
     }
 
     if (!this.mark_done_button_el.dataset?.scMarkDoneLabel) {
-      this.mark_done_button_el.dataset.scMarkDoneLabel = this.mark_done_button_el.textContent || 'Mark done';
+      this.mark_done_button_el.dataset.scMarkDoneLabel =
+        this.mark_done_button_el.textContent || (this._MARK_DONE_LABEL || 'Mark done');
     }
 
     if (typeof this._check_if_done !== 'function') return;
@@ -106,22 +303,13 @@ export class SmartChatCodeblock {
     const is_done = await this._check_if_done(normalized);
 
     if (!is_done) {
-      // Ensure label is not stuck as "Mark active"
       const original = this.mark_done_button_el.dataset?.scMarkDoneLabel;
       if (original) this.mark_done_button_el.textContent = original;
       return;
     }
 
-    // Done -> show "Mark active"
     this.mark_done_button_el.textContent = 'Mark active';
-
-    if (typeof this._show_mark_done_button === 'function') {
-      this._show_mark_done_button();
-    } else {
-      // Fallback: unhide by style/class when helpers do not exist
-      try { this.mark_done_button_el.style.display = ''; } catch (_) {}
-      try { this.mark_done_button_el.classList.remove('sc-hidden'); } catch (_) {}
-    }
+    this._show_mark_done_button();
 
     this.mark_done_button_el.onclick = async () => {
       await this._mark_thread_active_in_codeblock(normalized);
@@ -208,19 +396,20 @@ export class SmartChatCodeblock {
     if (!this.file) return;
     const timestamp_in_seconds = Math.floor(Date.now() / 1000);
     const new_line = `chat-active:: ${timestamp_in_seconds} ${url}`;
-    if(this.ctx && this.ctx.replaceCode) {
-      // Use the codeblock cm context to insert the new line (prevents flicker)
+
+    if (this.ctx && this.ctx.replaceCode) {
       this.ctx.replaceCode(new_line + '\n' + this.source);
-      const {text, lineStart: line_start, lineEnd: line_end} = this.ctx.getSectionInfo(this.container_el) ?? {};
+      const { text, lineStart: line_start, lineEnd: line_end } =
+        this.ctx.getSectionInfo(this.container_el) ?? {};
       const updated_source = text.split('\n').slice(line_start + 1, line_end).join('\n');
       this.source = updated_source;
       this.links = this._extract_links(this.source);
-      this._build_dropdown(); // re-render the dropdown
+      this._build_dropdown();
       return;
     }
-    // @ deprecated: fallback to reading the file
+
     await this.plugin.app.vault.process(this.file, (file_data) => {
-      const [start, end] = this._find_codeblock_boundaries(file_data);
+      const [start, end] = this._find_codeblock_boundaries ? this._find_codeblock_boundaries(file_data) : [this.line_start, this.line_end];
       if (start < 0 || end < 0) {
         console.warn('Cannot find codeblock to insert link:', url);
         return file_data;
@@ -237,7 +426,7 @@ export class SmartChatCodeblock {
   _build_dropdown(parent_el=null) {
     if (!this.dropdown_el) {
       const dropdown_parent = parent_el || this.dropdown_container_el;
-      if(!dropdown_parent) throw new Error('Parent element is required to build dropdown');
+      if (!dropdown_parent) throw new Error('Parent element is required to build dropdown');
       this.dropdown_container_el = dropdown_parent.createEl('div', { cls: 'sc-dropdown-container' });
       this.dropdown_el = this.dropdown_container_el.createEl('select', { cls: 'sc-link-dropdown' });
       this.dropdown_el.addEventListener('change', () => {
@@ -256,13 +445,13 @@ export class SmartChatCodeblock {
         }
       });
     }
-    this.dropdown_el.empty(); // Clear existing options
 
-
+    this.dropdown_el.empty();
     this.add_dropdown_options();
 
     const preferred = this.current_url || this.initial_link || this._FALLBACK_URL;
     this._sync_dropdown_value(preferred);
+
     if (!this.dropdown_el.value) {
       this.dropdown_el.value = this._FALLBACK_URL;
       this.current_url = this._FALLBACK_URL;
@@ -293,9 +482,11 @@ export class SmartChatCodeblock {
         this.refresh_button_el = btn;
         btn.onclick = () => {
           if (this.webview_el) {
-            this.webview_el.reload();
-            this.plugin.env?.events?.emit('webview:reloaded', { url: this.current_url });
-            this.plugin.notices.show('Webview reloaded.');
+            try {
+              this.webview_el.reload();
+              this.plugin.env?.events?.emit('webview:reloaded', { url: this.current_url });
+              this.plugin.notices.show('Webview reloaded.');
+            } catch (_) {}
           }
         };
         return;
@@ -356,19 +547,25 @@ export class SmartChatCodeblock {
     const new_chat = this.dropdown_el.createEl('option');
     new_chat.value = this._FALLBACK_URL;
     new_chat.textContent = 'New chat';
-    // Add links from the codeblock
-    for (const link_obj of this.links) {
+
+    const initial_fallback = this._get_initial_fallback_url();
+    if (initial_fallback && initial_fallback !== this._FALLBACK_URL) {
+      const home_opt = this.dropdown_el.createEl('option');
+      home_opt.value = initial_fallback;
+      home_opt.textContent = 'Home';
+    }
+
+    for (const link_obj of this.links || []) {
       const option_el = this.dropdown_el.createEl('option');
       option_el.value = link_obj.url;
       const label = this._get_dropdown_label(link_obj.url);
-      option_el.textContent = link_obj.done
-        ? ('✓ ' + label)
-        : label;
+      option_el.textContent = link_obj.done ? ('✓ ' + label) : label;
     }
   }
 
   _init_navigation_events() {
     if (!this.webview_el || !this._supports_webview) return;
+
     this.webview_el.addEventListener('did-finish-load', () => {
       this.webview_el.setAttribute('data-did-finish-load', 'true');
     });
@@ -395,38 +592,25 @@ export class SmartChatCodeblock {
     this.last_detected_url = new_url;
     this.current_url = new_url;
 
-    // Auto-save new thread link if it's recognized
-    if (this._is_thread_link(new_url)) {
+    if (typeof this._is_thread_link === 'function' && this._is_thread_link(new_url)) {
       const link_to_save = this._normalize_url(new_url);
-      const already_saved = await this._check_if_saved(link_to_save);
+      const already_saved = await this._check_if_saved?.(link_to_save);
       if (!already_saved) {
         await this._insert_link_into_codeblock(link_to_save);
         this.plugin.env?.events?.emit('chat_codeblock:saved_thread', { url: link_to_save });
         this.plugin.notices.show(`Auto-saved new ${this.constructor.name} thread link.`);
       }
     }
-    this._render_save_ui(new_url);
-  }
 
-  /**
-   * Normalises a URL by stripping query / hash.
-   * @param {string} url
-   * @returns {string}
-   */
-  _normalize_url(url) {
-    try {
-      const u = new URL(url);
-      u.search = '';
-      u.hash = '';
-      return u.toString();
-    } catch (_) {
-      return url;
+    if (typeof this._render_save_ui === 'function') {
+      this._render_save_ui(new_url);
     }
   }
 
-  /**
-   * Injects a <style id="sc-grow-css"> tag with the "grow" rules.
-   */
+  _normalize_url(url) {
+    return normalize_url_value(url);
+  }
+
   _applyGrowCss() {
     if (document.getElementById('sc-grow-css')) return;
 
@@ -451,43 +635,37 @@ export class SmartChatCodeblock {
     document.head.appendChild(styleEl);
   }
 
-  /**
-   * Removes the injected grow rules if present.
-   */
   _removeGrowCss() {
     const styleEl = document.getElementById('sc-grow-css');
     if (styleEl) styleEl.remove();
   }
 
-  // Override this method in subclasses to extract links from the source based on platform-specific logic
-  _extract_links(source) {}
-
-  /* ------------------------------------------------------------------ */
-  /* Build context button                                                */
-  /* ------------------------------------------------------------------ */
+  _extract_links(codeblock_source) {
+    return extract_links_from_source({
+      codeblock_source,
+      link_regex: this.link_regex
+    });
+  }
 
   _bind_build_context_click(btn) {
     if (!(btn instanceof HTMLButtonElement)) return;
 
-    // No addEventListener: avoids duplicate listeners by construction.
     btn.onclick = () => {
       const url = this.current_url || this.initial_link || '';
       const context_key = this._resolve_context_key(url);
       const env = this.plugin.env;
-      if(!env) return console.warn('No plugin.env available for context selector');
-      const ctx = env.smart_contexts.get(context_key)
-        || env.smart_contexts.new_context({key: context_key})
-      ;
+      if (!env) return console.warn('No plugin.env available for context selector');
+
+      const ctx = env.smart_contexts.get(context_key) || env.smart_contexts.new_context({ key: context_key });
       const temp_ctx = env.smart_contexts.get('temp-chat-context');
-      console.log({context_key, ctx, temp_ctx});
-      if(temp_ctx) {
-        // Merge temp context into the real one
+
+      if (temp_ctx) {
         const items_to_add = Object.keys(temp_ctx.data.context_items);
-        console.log({context_key, items_to_add});
         ctx.add_items(items_to_add);
         temp_ctx.delete();
         temp_ctx.collection.process_save_queue();
       }
+
       ctx.emit_event('context_selector:open');
     };
   }
@@ -497,7 +675,7 @@ export class SmartChatCodeblock {
     if (thread_key) return thread_key;
 
     if (this._temp_context_key) return this._temp_context_key;
-    this._temp_context_key = `temp-chat-context`;
+    this._temp_context_key = 'temp-chat-context';
     return this._temp_context_key;
   }
 
@@ -519,10 +697,6 @@ export class SmartChatCodeblock {
       return null;
     }
   }
-
-  /* ------------------------------------------------------------------ */
-  /* Mark active support                                                 */
-  /* ------------------------------------------------------------------ */
 
   async _get_codeblock_boundaries(file_data) {
     if (typeof this._find_codeblock_boundaries !== 'function') {
