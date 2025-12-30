@@ -10,7 +10,8 @@
     "release": "node release.js"
   },
   "dependencies": {
-    "obsidian": "latest"
+    "obsidian": "latest",
+    "obsidian-smart-env": "file:../obsidian-smart-env"
   },
   "devDependencies": {
     "archiver": "^7.0.1",
