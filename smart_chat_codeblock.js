@@ -1,5 +1,13 @@
 import { Platform, openExternal } from 'obsidian';
 import { format_dropdown_label, platform_label_from_url } from './dropdown_label.js';
+const footer_button_labels = () => [
+  'Refresh',
+  'Build context',
+  'Open in browser',
+  'Copy link',
+  'Grow'
+];
+
 
 const MOBILE_HINT_TEXT = 'Webview unavailable on mobile. Use Open + Copy.';
 
@@ -32,9 +40,6 @@ export class SmartChatCodeblock {
 
     this._wrap_render_save_ui();
     this._init_no_webview_click_intercepts();
-
-    // Inject Build context button into bottom row when it appears
-    this._init_build_context_button_injection();
   }
 
   _is_mobile_app() {
@@ -275,6 +280,74 @@ export class SmartChatCodeblock {
     });
   }
 
+  _render_footer() {
+    if (!this.container_el?.createEl) return null;
+
+    const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
+    this._grow_css_active = false;
+
+    footer_button_labels().forEach(label => {
+      const btn = bottom_row_el.createEl('button', { text: label });
+
+      if (label === 'Refresh') {
+        this.refresh_button_el = btn;
+        btn.onclick = () => {
+          if (this.webview_el) {
+            this.webview_el.reload();
+            this.plugin.env?.events?.emit('webview:reloaded', { url: this.current_url });
+            this.plugin.notices.show('Webview reloaded.');
+          }
+        };
+        return;
+      }
+
+      if (label === 'Build context') {
+        btn.classList.add('sc-build-context-button');
+        this._bind_build_context_click(btn);
+        return;
+      }
+
+      if (label === 'Open in browser') {
+        this.open_browser_button_el = btn;
+        btn.onclick = () => {
+          if (this.current_url && this.current_url.startsWith('http')) {
+            window.open(this.current_url, '_blank');
+          }
+        };
+        return;
+      }
+
+      if (label === 'Copy link') {
+        this.copy_link_button_el = btn;
+        btn.onclick = () => {
+          if (this.current_url?.startsWith('http')) {
+            navigator.clipboard.writeText(this.current_url);
+            this.plugin.env?.events?.emit('url:copied', { url: this.current_url });
+            this.plugin.notices.show('Copied current URL to clipboard.');
+          }
+        };
+        return;
+      }
+
+      if (label === 'Grow') {
+        this.grow_contain_button_el = btn;
+        btn.onclick = () => {
+          if (this._grow_css_active) {
+            this._removeGrowCss();
+            this.grow_contain_button_el.textContent = 'Grow';
+            this._grow_css_active = false;
+          } else {
+            this._applyGrowCss();
+            this.grow_contain_button_el.textContent = 'Contain';
+            this._grow_css_active = true;
+          }
+        };
+      }
+    });
+
+    return bottom_row_el;
+  }
+
   _get_dropdown_label(url) {
     return format_dropdown_label(url, this.platform_label || platform_label_from_url(url));
   }
@@ -392,64 +465,6 @@ export class SmartChatCodeblock {
   /* ------------------------------------------------------------------ */
   /* Build context button                                                */
   /* ------------------------------------------------------------------ */
-
-  _init_build_context_button_injection() {
-    if (this._build_context_injection_inited) return;
-    this._build_context_injection_inited = true;
-
-    if (!this.container_el) return;
-
-    const try_inject = () => {
-      const bottom_row_el = this.container_el.querySelector?.('.sc-bottom-row');
-      if (!(bottom_row_el instanceof HTMLElement)) return false;
-      this._ensure_build_context_button(bottom_row_el);
-      return true;
-    };
-
-    if (try_inject()) return;
-
-    if (typeof MutationObserver === 'undefined') return;
-
-    this._build_context_observer = new MutationObserver(() => {
-      if (try_inject()) {
-        try { this._build_context_observer.disconnect(); } catch (_) {}
-        this._build_context_observer = null;
-      }
-    });
-
-    try {
-      this._build_context_observer.observe(this.container_el, { childList: true, subtree: true });
-    } catch (err) {
-      console.error('Failed observing container for build-context injection:', err);
-    }
-  }
-
-  _ensure_build_context_button(bottom_row_el) {
-    if (!(bottom_row_el instanceof HTMLElement)) return;
-
-    const existing = bottom_row_el.querySelector?.('button.sc-build-context-button');
-    if (existing instanceof HTMLButtonElement) {
-      // Ensure handler is set (no addEventListener duplication; uses onclick)
-      this._bind_build_context_click(existing);
-      return;
-    }
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'sc-build-context-button';
-    btn.textContent = 'Build context';
-
-    // Insert before last button (typically Grow) so mobile "last-child" hiding stays correct.
-    const buttons = bottom_row_el.querySelectorAll?.('button') || [];
-    const last_btn = buttons.length ? buttons[buttons.length - 1] : null;
-    if (last_btn && last_btn.parentNode === bottom_row_el) {
-      bottom_row_el.insertBefore(btn, last_btn);
-    } else {
-      bottom_row_el.appendChild(btn);
-    }
-
-    this._bind_build_context_click(btn);
-  }
 
   _bind_build_context_click(btn) {
     if (!(btn instanceof HTMLButtonElement)) return;

@@ -131,50 +131,7 @@ export class SmartClaudeCodeblock extends SmartChatCodeblock {
     });
     this._init_navigation_events();
 
-    const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
-    bottom_row_el.style.display = 'flex';
-    bottom_row_el.style.gap = '8px';
-    bottom_row_el.style.marginTop = '8px';
-
-    this.refresh_button_el = bottom_row_el.createEl('button', { text: 'Refresh' });
-    this.refresh_button_el.addEventListener('click', () => {
-      if (this.webview_el) {
-        this.webview_el.reload();
-        this.plugin.env?.events?.emit('webview:reloaded', { url: this.current_url });
-        this.plugin.notices.show('Webview reloaded.');
-      }
-    });
-
-    this.open_browser_button_el = bottom_row_el.createEl('button', { text: 'Open in Browser' });
-    this.open_browser_button_el.addEventListener('click', () => {
-      if (this.current_url && this.current_url.startsWith('http')) {
-        window.open(this.current_url, '_blank');
-      }
-    });
-
-    this.copy_link_button_el = bottom_row_el.createEl('button', { text: 'Copy Link' });
-    this.copy_link_button_el.addEventListener('click', () => {
-      if (this.current_url && this.current_url.startsWith('http')) {
-        navigator.clipboard.writeText(this.current_url);
-        this.plugin.env?.events?.emit('url:copied', { url: this.current_url });
-        this.plugin.notices.show('Copied current URL to clipboard.');
-      }
-    });
-
-    this.grow_contain_button_el = bottom_row_el.createEl('button', { text: 'Grow' });
-    this._grow_css_active = false;
-
-    this.grow_contain_button_el.addEventListener('click', () => {
-      if (this._grow_css_active) {
-        this._removeGrowCss();
-        this.grow_contain_button_el.textContent = 'Grow';
-        this._grow_css_active = false;
-      } else {
-        this._applyGrowCss();
-        this.grow_contain_button_el.textContent = 'Contain';
-        this._grow_css_active = true;
-      }
-    });
+    this._render_footer();
 
     this._render_save_ui(this.initial_link);
   }
