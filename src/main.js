@@ -1,21 +1,20 @@
 import {
   Plugin,
   Notice,
-  TFile,
-  PluginSettingTab,
-  Setting
-} from 'obsidian';
+  TFile} from 'obsidian';
 
-import { SmartChatgptCodeblock }    from './smart_chatgpt_codeblock.js';
-import { SmartClaudeCodeblock }     from './smart_claude_codeblock.js';
-import { SmartGeminiCodeblock }     from './smart_gemini_codeblock.js';
-import { SmartDeepseekCodeblock }   from './smart_deepseek_codeblock.js';
-import { SmartPerplexityCodeblock } from './smart_perplexity_codeblock.js';
-import { SmartGrokCodeblock }       from './smart_grok_codeblock.js';
-import { SmartAistudioCodeblock }   from './smart_aistudio_codeblock.js';
+import { SmartPlugin } from 'obsidian-smart-env/smart_plugin.js';
+import { SmartChatgptCodeblock }    from './views/smart_chatgpt_codeblock.js';
+import { SmartClaudeCodeblock }     from './views/smart_claude_codeblock.js';
+import { SmartGeminiCodeblock }     from './views/smart_gemini_codeblock.js';
+import { SmartDeepseekCodeblock }   from './views/smart_deepseek_codeblock.js';
+import { SmartPerplexityCodeblock } from './views/smart_perplexity_codeblock.js';
+import { SmartGrokCodeblock }       from './views/smart_grok_codeblock.js';
+import { SmartAistudioCodeblock }   from './views/smart_aistudio_codeblock.js';
 
 // DEPRECATED view from sc-obsidian
-import { SmartChatGPTView } from "./src/views/sc_chatgpt.obsidian.js";
+import { SmartChatGPTView } from "./views/sc_chatgpt.obsidian.js";
+import { SmartChatgptSettingTab } from './views/settings_tab.js';
 
 /**
  * @typedef {Object} SmartChatgptPluginSettings
@@ -27,66 +26,7 @@ const DEFAULT_SETTINGS = {
   zoom_factor: 0.9
 };
 
-class SmartChatgptSettingTab extends PluginSettingTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
-
-    new Setting(containerEl)
-      .setName('Height (px)')
-      .setDesc('Iframe height for embedded webviews.')
-      .addText(txt => {
-        txt
-          .setPlaceholder('800')
-          .setValue(String(this.plugin.settings.iframe_height))
-          .onChange(async v => {
-            const n = parseInt(v, 10);
-            if (!isNaN(n)) {
-              this.plugin.settings.iframe_height = n;
-              await this.plugin.saveSettings();
-            }
-          });
-      });
-
-    new Setting(containerEl)
-      .setName('Zoom')
-      .setDesc('Zoom factor for all webviews.')
-      .addSlider(slider => {
-        slider
-          .setLimits(0.1, 2.0, 0.1)
-          .setValue(this.plugin.settings.zoom_factor)
-          .onChange(async v => {
-            this.plugin.settings.zoom_factor = v;
-            await this.plugin.saveSettings();
-            this.display();
-          });
-      })
-      .addExtraButton(btn => {
-        btn
-          .setIcon('reset')
-          .setTooltip('Reset zoom')
-          .onClick(async () => {
-            this.plugin.settings.zoom_factor = 1.0;
-            await this.plugin.saveSettings();
-            this.display();
-          });
-      })
-      .then(setting => {
-        setting.settingEl
-          .createEl('div', {
-            text: `Current: ${this.plugin.settings.zoom_factor.toFixed(1)}`
-          })
-          .style.marginTop = '5px';
-      });
-  }
-}
-
-export default class SmartChatgptPlugin extends Plugin {
+export default class SmartChatgptPlugin extends SmartPlugin {
   get env () {
     return window?.smart_env;
   }

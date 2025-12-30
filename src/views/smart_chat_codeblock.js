@@ -1,5 +1,5 @@
 import { Platform, openExternal } from 'obsidian';
-import { format_dropdown_label, platform_label_from_url } from './dropdown_label.js';
+import { format_dropdown_label, platform_label_from_url } from '../utils/dropdown_label.js';
 const footer_button_labels = () => [
   'Refresh',
   'Build context',

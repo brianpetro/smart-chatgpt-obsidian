@@ -19,5 +19,8 @@
     "dotenv": "^16.4.5",
     "esbuild": "^0.25.9",
     "readline": "^1.3.0"
-  }
+  },
+  "workspaces": [
+    "../obsidian-smart-env"
+  ]
 }

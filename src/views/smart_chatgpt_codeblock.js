@@ -1,5 +1,5 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
-import { is_chatgpt_thread_link } from './chatgpt_thread_link.js';
+import { is_chatgpt_thread_link } from '../utils/chatgpt_thread_link.js';
 
 export class SmartChatgptCodeblock extends SmartChatCodeblock {
   /**
