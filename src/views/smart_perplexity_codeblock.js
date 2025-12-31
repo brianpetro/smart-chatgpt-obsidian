@@ -49,18 +49,16 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
     }
 
     const is_done = await this._check_if_done(url);
-    if (is_done) {
-      this._set_status_text('This search is marked done.');
-      return;
+    if (!is_done) {
+      this._show_mark_done_button();
+      this.mark_done_button_el.onclick = async () => {
+        await this._mark_thread_done_in_codeblock(url);
+        this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url });
+        this.plugin.notices.show('Marked Perplexity search as done.');
+        this._render_save_ui(this.current_url);
+      };
     }
 
-    this._show_mark_done_button();
-    this.mark_done_button_el.onclick = async () => {
-      await this._mark_thread_done_in_codeblock(url);
-      this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url });
-      this.plugin.notices.show('Marked Perplexity search as done.');
-      this._render_save_ui(this.current_url);
-    };
   }
 
   async _check_if_saved(url) {

@@ -69,18 +69,16 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
     const link_to_check = this._normalize_url(url);
     const is_done = await this._check_if_done(link_to_check);
-    if (is_done) {
-      this._set_status_text('This conversation is marked done.');
-      return;
+    if (!is_done) {
+      this._show_mark_done_button();
+      this.mark_done_button_el.onclick = async () => {
+        await this._mark_thread_done_in_codeblock(link_to_check);
+        this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url: link_to_check });
+        this.plugin.notices.show('Marked conversation as done.');
+        this._render_save_ui(this.current_url);
+      };
     }
 
-    this._show_mark_done_button();
-    this.mark_done_button_el.onclick = async () => {
-      await this._mark_thread_done_in_codeblock(link_to_check);
-      this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url: link_to_check });
-      this.plugin.notices.show('Marked conversation as done.');
-      this._render_save_ui(this.current_url);
-    };
   }
 
   async _check_if_saved(url) {

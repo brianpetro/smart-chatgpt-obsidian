@@ -276,6 +276,7 @@ export class SmartChatCodeblock {
       this._sync_dropdown_value(url);
       const result = await original_render_save_ui(url);
       await this._maybe_render_mark_active_ui(url);
+      await this._render_human_readable_thread_meta(url);
       return result;
     };
     this._render_save_ui_wrapped = true;
@@ -418,6 +419,13 @@ export class SmartChatCodeblock {
       lines.splice(start + 1, 0, new_line);
       return lines.join('\n');
     });
+
+    // Best-effort refresh of in-memory source so datetime meta can render immediately.
+    const updated_source = await this._get_codeblock_source_from_file();
+    if (typeof updated_source === 'string') {
+      this.source = updated_source;
+      this.links = this._extract_links(this.source);
+    }
   }
 
   /**
@@ -741,5 +749,124 @@ export class SmartChatCodeblock {
     } catch (err) {
       console.error('Error marking thread active:', err);
     }
+  }
+
+  _format_local_datetime_from_unix_seconds(timestamp_in_seconds) {
+    const ts = Number(timestamp_in_seconds);
+    if (!Number.isFinite(ts) || ts <= 0) return '';
+
+    const d = new Date(ts * 1000);
+    if (Number.isNaN(d.getTime())) return '';
+
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const mm = pad2(d.getMonth() + 1);
+    const dd = pad2(d.getDate());
+    const hh = pad2(d.getHours());
+    const min = pad2(d.getMinutes());
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+  }
+
+  _format_relative_time_from_unix_seconds(timestamp_in_seconds) {
+    const ts = Number(timestamp_in_seconds);
+    if (!Number.isFinite(ts) || ts <= 0) return '';
+
+    const now_ms = Date.now();
+    const diff_ms = now_ms - (ts * 1000);
+    if (!Number.isFinite(diff_ms)) return '';
+
+    if (diff_ms < 0) return 'in the future';
+
+    const diff_s = Math.floor(diff_ms / 1000);
+    if (diff_s < 10) return 'just now';
+    if (diff_s < 60) return `${diff_s}s ago`;
+
+    const diff_m = Math.floor(diff_s / 60);
+    if (diff_m < 60) return `${diff_m}m ago`;
+
+    const diff_h = Math.floor(diff_m / 60);
+    if (diff_h < 24) return `${diff_h}h ago`;
+
+    const diff_d = Math.floor(diff_h / 24);
+    if (diff_d < 30) return `${diff_d}d ago`;
+
+    const diff_mo = Math.floor(diff_d / 30);
+    if (diff_mo < 12) return `${diff_mo}mo ago`;
+
+    const diff_y = Math.floor(diff_d / 365);
+    return `${diff_y}y ago`;
+  }
+
+  _parse_thread_meta_from_codeblock_source({ codeblock_source, url }) {
+    if (!codeblock_source || typeof codeblock_source !== 'string') return null;
+    if (!url || typeof url !== 'string') return null;
+
+    const target = this._normalize_url(url);
+    if (!target) return null;
+
+    const lines = codeblock_source.split('\n');
+    for (const raw_line of lines) {
+      const trimmed = (raw_line || '').trim();
+      if (!trimmed) continue;
+
+      const lower = trimmed.toLowerCase();
+      const is_active = lower.startsWith('chat-active::');
+      const is_done = lower.startsWith('chat-done::');
+      if (!is_active && !is_done) continue;
+
+      const tokens = trimmed.split(/\s+/).filter(Boolean);
+      if (tokens.length < 2) continue;
+
+      const maybe_ts = tokens[1];
+      const ts = parseInt(maybe_ts, 10);
+      const timestamp_in_seconds = Number.isFinite(ts) ? ts : null;
+
+      const last_token = tokens[tokens.length - 1] || '';
+      const candidate_url = this._normalize_url(last_token);
+
+      if (candidate_url && candidate_url === target) {
+        return {
+          done: is_done,
+          timestamp_in_seconds
+        };
+      }
+    }
+
+    return null;
+  }
+
+  async _render_human_readable_thread_meta(url) {
+
+    if (!url || typeof url !== 'string') return;
+    if (!url.startsWith('http')) return;
+
+    // First try current in-memory source.
+    let meta = this._parse_thread_meta_from_codeblock_source({
+      codeblock_source: this.source,
+      url
+    });
+
+    // Fallback: if we couldn't find it (or source was stale), read from file once.
+    if (!meta && this.file) {
+      const updated_source = await this._get_codeblock_source_from_file();
+      if (typeof updated_source === 'string') {
+        this.source = updated_source;
+        meta = this._parse_thread_meta_from_codeblock_source({
+          codeblock_source: updated_source,
+          url
+        });
+      }
+    }
+
+    if (!meta || !meta.timestamp_in_seconds) return;
+
+    const dt = this._format_local_datetime_from_unix_seconds(meta.timestamp_in_seconds);
+    if (!dt) return;
+
+    const rel = this._format_relative_time_from_unix_seconds(meta.timestamp_in_seconds);
+
+    const display = rel ? `${dt} (${rel})` : `${dt}`;
+    this._set_status_text(display);
   }
 }
