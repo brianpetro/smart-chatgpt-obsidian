@@ -1,4 +1,4 @@
-import { Platform } from 'obsidian';
+import { Platform, setIcon } from 'obsidian';
 import { format_dropdown_label, platform_label_from_url } from '../utils/dropdown_label.js';
 import {
   extract_links_from_source,
@@ -11,6 +11,8 @@ import {
 const DEFAULT_WEBVIEW_USERAGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.191 Safari/537.36';
 const DEFAULT_WEBVIEW_PREFERENCES = 'nativeWindowOpen=yes, contextIsolation=yes';
+
+const HELP_DOC_URL = 'https://smartconnections.app/smart-chat/codeblock/';
 
 const footer_button_labels = () => [
   'Refresh',
@@ -34,6 +36,7 @@ export class SmartChatCodeblock {
 
     this._FALLBACK_URL = 'https://smartconnections.app/?utm_source=chat-codeblock-fallback';
     this._INITIAL_FALLBACK_URL = '';
+    this._HELP_URL = HELP_DOC_URL;
 
     this.link_regex = /(https?:\/\/[^\s]+)/g;
     this.links = [];
@@ -49,6 +52,7 @@ export class SmartChatCodeblock {
     this.mobile_hint_el = null;
 
     this.mark_done_button_el = null;
+    this.help_button_el = null;
     this.status_text_el = null;
     this.webview_el = null;
 
@@ -110,6 +114,7 @@ export class SmartChatCodeblock {
     this.mobile_hint_el = null;
 
     this.mark_done_button_el = null;
+    this.help_button_el = null;
     this.status_text_el = null;
     this.webview_el = null;
 
@@ -145,6 +150,9 @@ export class SmartChatCodeblock {
     });
     this._hide_mark_done_button();
 
+    // Help icon (docs) immediately after Mark done / Mark active.
+    this._build_help_button(top_row_el);
+
     this.status_text_el = top_row_el.createEl('span', {
       text: '',
       cls: 'sc-status-text'
@@ -178,6 +186,29 @@ export class SmartChatCodeblock {
     }
 
     this._render_footer();
+  }
+
+  _build_help_button(parent_el) {
+    if (!parent_el?.createEl) return;
+
+    const btn = parent_el.createEl('button', {
+      cls: 'sc-help-button'
+    });
+
+    btn.setAttribute('aria-label', 'Help: Smart Chat codeblock docs');
+    btn.setAttribute('title', 'Help');
+
+    try {
+      setIcon(btn, 'help-circle');
+    } catch (_) {
+      btn.textContent = '?';
+    }
+
+    btn.onclick = () => {
+      this._open_external_url(this._HELP_URL);
+    };
+
+    this.help_button_el = btn;
   }
 
   _is_mobile_app() {

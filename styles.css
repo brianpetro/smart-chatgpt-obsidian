@@ -18,6 +18,21 @@
   align-items: center;
 }
 
+/* Help icon button in top row */
+.sc-help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  height: 28px;
+  width: 28px;
+}
+
+.sc-help-button svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* Layout for the bottom row of codeblock UI */
 .sc-bottom-row {
   display: flex;
