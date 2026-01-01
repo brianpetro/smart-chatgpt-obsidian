@@ -12,6 +12,8 @@ const HOST_PLATFORM_LABELS = {
   'sora.chatgpt.com': 'Sora'
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const prettify_hostname = (hostname) => {
   if (!hostname) return 'Link';
   const parts = hostname.split('.').filter(Boolean);
@@ -29,6 +31,28 @@ const last_path_segment = (url) => {
   }
 };
 
+/**
+ * Shorten long ids for dropdown display.
+ *
+ * Rules:
+ * - UUID-like segments: first 8 + "..." + last 4
+ * - Other long segments: first 8 + "..." + last 6
+ *
+ * @param {string} segment
+ * @returns {string}
+ */
+export const shorten_id_segment = (segment) => {
+  const s = String(segment || '').trim();
+  if (!s) return '';
+  if (s.length <= 14) return s;
+
+  const first = s.slice(0, 8);
+  const last_len = UUID_REGEX.test(s) ? 4 : 6;
+  const last = s.slice(-last_len);
+
+  return `${first}...${last}`;
+};
+
 export const platform_label_from_url = (url, fallback = 'Link') => {
   try {
     const host = new URL(url).hostname;
@@ -41,7 +65,8 @@ export const platform_label_from_url = (url, fallback = 'Link') => {
 export const format_dropdown_label = (url, platform_label = null) => {
   const label = platform_label || platform_label_from_url(url);
   const segment = last_path_segment(url);
-  return segment ? `${label} • ${segment}` : label;
+  const shortened = shorten_id_segment(segment);
+  return shortened ? `${label} • ${shortened}` : label;
 };
 
 export { HOST_PLATFORM_LABELS };

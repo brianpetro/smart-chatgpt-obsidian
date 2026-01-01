@@ -43,7 +43,9 @@ export class SmartChatCodeblock {
     this.current_url = '';
 
     this.dropdown_container_el = null;
+    this.dropdown_row_el = null;
     this.dropdown_el = null;
+    this.state_chip_el = null;
     this.mobile_hint_el = null;
 
     this.mark_done_button_el = null;
@@ -102,7 +104,9 @@ export class SmartChatCodeblock {
 
   _reset_dom_refs() {
     this.dropdown_container_el = null;
+    this.dropdown_row_el = null;
     this.dropdown_el = null;
+    this.state_chip_el = null;
     this.mobile_hint_el = null;
 
     this.mark_done_button_el = null;
@@ -247,6 +251,25 @@ export class SmartChatCodeblock {
     }
   }
 
+  _set_thread_state_chip({ state_label, state_class }) {
+    if (!this.state_chip_el) return;
+
+    this.state_chip_el.textContent = state_label || '';
+
+    const classes_to_remove = ['sc-state-active', 'sc-state-done', 'sc-state-unsaved'];
+    classes_to_remove.forEach(cls => {
+      try {
+        this.state_chip_el.classList.remove(cls);
+      } catch (_) {}
+    });
+
+    if (state_class) {
+      try {
+        this.state_chip_el.classList.add(state_class);
+      } catch (_) {}
+    }
+  }
+
   _show_mark_done_button() {
     if (!this.mark_done_button_el) return;
     try {
@@ -276,7 +299,7 @@ export class SmartChatCodeblock {
       this._sync_dropdown_value(url);
       const result = await original_render_save_ui(url);
       await this._maybe_render_mark_active_ui(url);
-      await this._render_human_readable_thread_meta(url);
+      await this._render_thread_state_ui(url);
       return result;
     };
     this._render_save_ui_wrapped = true;
@@ -436,7 +459,15 @@ export class SmartChatCodeblock {
       const dropdown_parent = parent_el || this.dropdown_container_el;
       if (!dropdown_parent) throw new Error('Parent element is required to build dropdown');
       this.dropdown_container_el = dropdown_parent.createEl('div', { cls: 'sc-dropdown-container' });
-      this.dropdown_el = this.dropdown_container_el.createEl('select', { cls: 'sc-link-dropdown' });
+
+      this.dropdown_row_el = this.dropdown_container_el.createEl('div', { cls: 'sc-dropdown-row' });
+      this.dropdown_el = this.dropdown_row_el.createEl('select', { cls: 'sc-link-dropdown' });
+
+      this.state_chip_el = this.dropdown_row_el.createEl('span', {
+        cls: 'sc-thread-state-chip sc-state-unsaved',
+        text: 'Unsaved'
+      });
+
       this.dropdown_el.addEventListener('change', () => {
         const new_link = this.dropdown_el.value;
 
@@ -446,9 +477,8 @@ export class SmartChatCodeblock {
           this.webview_el.setAttribute('src', new_link);
         }
 
-        // In no-webview environments, navigation events will never fire.
-        // Trigger UI refresh immediately so Mark done / status reflect the selection.
-        if (!this._supports_webview && typeof this._render_save_ui === 'function') {
+        // Always refresh UI immediately (state chip + status + mark done/active).
+        if (typeof this._render_save_ui === 'function') {
           this._render_save_ui(new_link);
         }
       });
@@ -481,13 +511,19 @@ export class SmartChatCodeblock {
     if (!this.container_el?.createEl) return null;
 
     const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
+    const left_group_el = bottom_row_el.createEl('div', { cls: 'sc-bottom-row-left' });
+    const right_group_el = bottom_row_el.createEl('div', { cls: 'sc-bottom-row-right' });
+
     this._grow_css_active = false;
 
     footer_button_labels().forEach(label => {
-      const btn = bottom_row_el.createEl('button', { text: label });
+      const is_left = (label === 'Refresh' || label === 'Build context');
+      const group_el = is_left ? left_group_el : right_group_el;
+      const btn = group_el.createEl('button', { text: label });
 
       if (label === 'Refresh') {
         this.refresh_button_el = btn;
+        btn.classList.add('sc-footer-refresh');
         btn.onclick = () => {
           if (this.webview_el) {
             try {
@@ -501,13 +537,15 @@ export class SmartChatCodeblock {
       }
 
       if (label === 'Build context') {
-        btn.classList.add('sc-build-context-button');
+        btn.classList.add('sc-build-context-button', 'sc-footer-build-context');
+        btn.setAttribute('aria-label', 'Build context for this thread');
         this._bind_build_context_click(btn);
         return;
       }
 
       if (label === 'Open in browser') {
         this.open_browser_button_el = btn;
+        btn.classList.add('sc-footer-open');
         btn.onclick = () => {
           if (this.current_url && this.current_url.startsWith('http')) {
             window.open(this.current_url, '_blank');
@@ -518,6 +556,7 @@ export class SmartChatCodeblock {
 
       if (label === 'Copy link') {
         this.copy_link_button_el = btn;
+        btn.classList.add('sc-footer-copy');
         btn.onclick = () => {
           if (this.current_url?.startsWith('http')) {
             navigator.clipboard.writeText(this.current_url);
@@ -530,14 +569,19 @@ export class SmartChatCodeblock {
 
       if (label === 'Grow') {
         this.grow_contain_button_el = btn;
+        btn.classList.add('sc-footer-grow');
+        btn.setAttribute('aria-label', 'Grow codeblock width');
+
         btn.onclick = () => {
           if (this._grow_css_active) {
             this._removeGrowCss();
             this.grow_contain_button_el.textContent = 'Grow';
+            this.grow_contain_button_el.setAttribute('aria-label', 'Grow codeblock width');
             this._grow_css_active = false;
           } else {
             this._applyGrowCss();
             this.grow_contain_button_el.textContent = 'Contain';
+            this.grow_contain_button_el.setAttribute('aria-label', 'Contain codeblock width');
             this._grow_css_active = true;
           }
         };
@@ -751,23 +795,6 @@ export class SmartChatCodeblock {
     }
   }
 
-  _format_local_datetime_from_unix_seconds(timestamp_in_seconds) {
-    const ts = Number(timestamp_in_seconds);
-    if (!Number.isFinite(ts) || ts <= 0) return '';
-
-    const d = new Date(ts * 1000);
-    if (Number.isNaN(d.getTime())) return '';
-
-    const pad2 = (n) => String(n).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    const mm = pad2(d.getMonth() + 1);
-    const dd = pad2(d.getDate());
-    const hh = pad2(d.getHours());
-    const min = pad2(d.getMinutes());
-
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-  }
-
   _format_relative_time_from_unix_seconds(timestamp_in_seconds) {
     const ts = Number(timestamp_in_seconds);
     if (!Number.isFinite(ts) || ts <= 0) return '';
@@ -836,37 +863,51 @@ export class SmartChatCodeblock {
     return null;
   }
 
-  async _render_human_readable_thread_meta(url) {
+  async _render_thread_state_ui(url) {
+    const is_http = !!(url && typeof url === 'string' && url.startsWith('http'));
 
-    if (!url || typeof url !== 'string') return;
-    if (!url.startsWith('http')) return;
+    let is_thread_link = false;
+    if (is_http) {
+      is_thread_link = typeof this._is_thread_link === 'function'
+        ? this._is_thread_link(url)
+        : true;
+    }
 
-    // First try current in-memory source.
-    let meta = this._parse_thread_meta_from_codeblock_source({
-      codeblock_source: this.source,
-      url
-    });
+    let meta = null;
 
-    // Fallback: if we couldn't find it (or source was stale), read from file once.
-    if (!meta && this.file) {
-      const updated_source = await this._get_codeblock_source_from_file();
-      if (typeof updated_source === 'string') {
-        this.source = updated_source;
-        meta = this._parse_thread_meta_from_codeblock_source({
-          codeblock_source: updated_source,
-          url
-        });
+    if (is_thread_link) {
+      meta = this._parse_thread_meta_from_codeblock_source({
+        codeblock_source: this.source,
+        url
+      });
+
+      if (!meta && this.file) {
+        const updated_source = await this._get_codeblock_source_from_file();
+        if (typeof updated_source === 'string') {
+          this.source = updated_source;
+          meta = this._parse_thread_meta_from_codeblock_source({
+            codeblock_source: updated_source,
+            url
+          });
+        }
       }
     }
 
-    if (!meta || !meta.timestamp_in_seconds) return;
+    let state_label = 'Unsaved';
+    let state_class = 'sc-state-unsaved';
+    let rel = '';
 
-    const dt = this._format_local_datetime_from_unix_seconds(meta.timestamp_in_seconds);
-    if (!dt) return;
+    if (meta) {
+      state_label = meta.done ? 'Done' : 'Active';
+      state_class = meta.done ? 'sc-state-done' : 'sc-state-active';
+      if (meta.timestamp_in_seconds) {
+        rel = this._format_relative_time_from_unix_seconds(meta.timestamp_in_seconds);
+      }
+    }
 
-    const rel = this._format_relative_time_from_unix_seconds(meta.timestamp_in_seconds);
+    this._set_thread_state_chip({ state_label, state_class });
 
-    const display = rel ? `${dt} (${rel})` : `${dt}`;
+    const display = rel ? `${state_label} • ${rel}` : state_label;
     this._set_status_text(display);
   }
 }

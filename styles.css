@@ -21,8 +21,17 @@
 /* Layout for the bottom row of codeblock UI */
 .sc-bottom-row {
   display: flex;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 8px;
+  align-items: center;
+}
+
+.sc-bottom-row-left,
+.sc-bottom-row-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 /* Status text on top row */
@@ -52,11 +61,82 @@
   gap: 4px;
 }
 
+.sc-dropdown-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Thread state chip next to dropdown */
+.sc-thread-state-chip {
+  font-size: 0.85em;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sc-thread-state-chip.sc-state-active {
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+}
+
+.sc-thread-state-chip.sc-state-done {
+  opacity: 0.85;
+}
+
+.sc-thread-state-chip.sc-state-unsaved {
+  color: var(--text-faint);
+}
+
 .sc-mobile-hint {
   display: none;
   color: var(--text-muted);
   font-size: 0.9em;
   line-height: 1.2;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tooltips (aria-label based)                                         */
+/* ------------------------------------------------------------------ */
+
+.sc-bottom-row button[aria-label] {
+  position: relative;
+}
+
+.sc-bottom-row button[aria-label]:hover::after,
+.sc-bottom-row button[aria-label]:focus-visible::after {
+  content: attr(aria-label);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--color-border);
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.sc-bottom-row button[aria-label]:hover::before,
+.sc-bottom-row button[aria-label]:focus-visible::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--color-border);
+  z-index: 1000;
+  pointer-events: none;
 }
 
 /* ------------------------------------------------------------------ */
@@ -72,7 +152,7 @@
 }
 
 /* Hide buttons that depend on the embedded webview (Refresh + Grow/Contain). */
-.sc-no-webview .sc-bottom-row button:first-child,
-.sc-no-webview .sc-bottom-row button:last-child {
+.sc-no-webview .sc-footer-refresh,
+.sc-no-webview .sc-footer-grow {
   display: none;
 }
