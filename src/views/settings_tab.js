@@ -62,5 +62,18 @@ export class SmartChatgptSettingTab extends SmartPluginSettingsTab {
           current_value_el.textContent = `Current: ${Number(reset_value).toFixed(1)}`;
         });
     });
+
+    new Setting(container)
+      .setName('Open WebUI URL')
+      .setDesc('Base URL for your Open WebUI instance (used by the smart-openwebui codeblock). Example: http://localhost:3000')
+      .addText((txt) => {
+        txt
+          .setPlaceholder('http://localhost:3000')
+          .setValue(String(this.plugin.settings.openwebui_base_url || ''))
+          .onChange(async (value) => {
+            this.plugin.settings.openwebui_base_url = String(value || '').trim();
+            await this.plugin.saveSettings();
+          });
+      });
   }
 }

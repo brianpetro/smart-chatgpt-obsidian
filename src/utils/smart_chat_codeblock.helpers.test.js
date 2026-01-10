@@ -6,6 +6,7 @@ import {
   resolve_initial_fallback_url,
   resolve_initial_link_from_links,
   is_grok_thread_link,
+  is_openwebui_thread_link,
 } from './smart_chat_codeblock.helpers.js';
 
 const link_regex = /(https?:\/\/[^\s]+)/g;
@@ -148,4 +149,31 @@ test('rejects invalid grok thread links', t => {
   }
 });
 
+const valid_openwebui_threads = [
+  'http://localhost:3000/c/123e4567-e89b-12d3-a456-426614174000',
+  'http://localhost:3000/c/123e4567-e89b-12d3-a456-426614174000/',
+  'https://openwebui.example.com/c/123e4567-e89b-12d3-a456-426614174000?utm_source=test',
+  'https://example.com/openwebui/c/123e4567-e89b-12d3-a456-426614174000'
+];
+
+const invalid_openwebui_threads = [
+  'http://localhost:3000/',
+  'http://localhost:3000/?models=llama3',
+  'http://localhost:3000/c',
+  'http://localhost:3000/c/new',
+  'https://example.com/path/without/c',
+  'not a url'
+];
+
+test('recognizes valid openwebui thread links', t => {
+  for (const url of valid_openwebui_threads) {
+    t.true(is_openwebui_thread_link(url), url);
+  }
+});
+
+test('rejects invalid openwebui thread links', t => {
+  for (const url of invalid_openwebui_threads) {
+    t.false(is_openwebui_thread_link(url), url);
+  }
+});
 

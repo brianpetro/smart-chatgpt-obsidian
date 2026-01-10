@@ -128,3 +128,38 @@ export function is_grok_thread_link(url) {
     return false;
   }
 }
+
+/**
+ * Determine if a URL points to an Open WebUI chat thread.
+ *
+ * Typical routes:
+ * - http://localhost:3000/c/<chat-id>
+ * - https://openwebui.example.com/c/<chat-id>
+ *
+ * Supports hosting under a subpath by searching for a '/c/<id>' segment pair.
+ *
+ * @param {string} url - URL to test.
+ * @returns {boolean} True when the URL matches a supported thread.
+ */
+export function is_openwebui_thread_link(url) {
+  try {
+    const parsed_url = new URL(url);
+
+    const segments = (parsed_url.pathname || '')
+      .split('/')
+      .filter(Boolean)
+      .map(segment => String(segment).toLowerCase());
+
+    const c_index = segments.indexOf('c');
+    if (c_index < 0) return false;
+
+    const thread_id = segments[c_index + 1];
+    if (!thread_id) return false;
+
+    if (thread_id === 'new') return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -11,6 +11,7 @@ import { SmartDeepseekCodeblock }   from './views/smart_deepseek_codeblock.js';
 import { SmartPerplexityCodeblock } from './views/smart_perplexity_codeblock.js';
 import { SmartGrokCodeblock }       from './views/smart_grok_codeblock.js';
 import { SmartAistudioCodeblock }   from './views/smart_aistudio_codeblock.js';
+import { SmartOpenWebuiCodeblock }  from './views/smart_openwebui_codeblock.js';
 
 // DEPRECATED view from sc-obsidian
 import { SmartChatGPTView } from "./views/sc_chatgpt.obsidian.js";
@@ -20,10 +21,12 @@ import { SmartChatgptSettingTab } from './views/settings_tab.js';
  * @typedef {Object} SmartChatgptPluginSettings
  * @property {number} iframe_height
  * @property {number} zoom_factor
+ * @property {string} openwebui_base_url
  */
 const DEFAULT_SETTINGS = {
   iframe_height: 800,
-  zoom_factor: 0.9
+  zoom_factor: 0.9,
+  openwebui_base_url: 'http://localhost:3000'
 };
 
 export default class SmartChatgptPlugin extends SmartPlugin {
@@ -67,7 +70,8 @@ export default class SmartChatgptPlugin extends SmartPlugin {
       ['smart-deepseek',  'DeepSeek'],
       ['smart-perplexity','Perplexity'],
       ['smart-grok',      'Grok'],
-      ['smart-aistudio',  'Google AI Studio']
+      ['smart-aistudio',  'Google AI Studio'],
+      ['smart-openwebui', 'Open WebUI']
     ];
     cmds.forEach(([lang, label]) => {
       this.addCommand({
@@ -89,7 +93,8 @@ export default class SmartChatgptPlugin extends SmartPlugin {
       'smart-deepseek':   SmartDeepseekCodeblock,
       'smart-perplexity': SmartPerplexityCodeblock,
       'smart-grok':       SmartGrokCodeblock,
-      'smart-aistudio':   SmartAistudioCodeblock
+      'smart-aistudio':   SmartAistudioCodeblock,
+      'smart-openwebui':  SmartOpenWebuiCodeblock
     };
 
     const makeProcessor = Cls => async (source, el, ctx) => {
