@@ -82,6 +82,45 @@ export default class SmartChatgptPlugin extends SmartPlugin {
         }
       });
     });
+
+    if (this._is_dataview_enabled()) {
+      this.addCommand({
+        id: 'insert-chat-thread-dataviews',
+        name: 'Insert Smart Chat thread Dataview blocks',
+        editorCallback: ed => {
+          ed.replaceSelection([
+            '## Chat threads',
+            '',
+            'In Progress:',
+            '',
+            '```dataview',
+            'LIST WITHOUT ID file.link',
+            'WHERE chat-active',
+            'SORT file.mtime DESC',
+            '```',
+            '',
+            'Completed:',
+            '',
+            '```dataview',
+            'LIST WITHOUT ID file.link',
+            'WHERE chat-done',
+            'SORT file.mtime DESC',
+            '```',
+            ''
+          ].join('\n'));
+        }
+      });
+    }
+  }
+
+  _is_dataview_enabled() {
+    const plugins = this.app?.plugins;
+    if (!plugins) return false;
+    if (plugins.enabledPlugins?.has?.('dataview')) return true;
+    if (typeof plugins.getPlugin === 'function') {
+      return Boolean(plugins.getPlugin('dataview'));
+    }
+    return false;
   }
 
   register_dynamic_codeblocks() {
