@@ -78,7 +78,7 @@ export default class SmartChatgptPlugin extends SmartPlugin {
         id: `insert-${lang}-codeblock`,
         name: `Insert ${label} codeblock`,
         editorCallback: ed => {
-          ed.replaceSelection(`\`\`\`${lang}\n\`\`\`\n`);
+          ed.replaceSelection(`\`\`\`${lang}\n\n\`\`\`\n`);
         }
       });
     });
