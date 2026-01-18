@@ -27,6 +27,20 @@ test('extracts active, done, and bare links', t => {
   ]);
 });
 
+test('extracts chat links when trailing tokens are present', t => {
+  const source = [
+    'chat-active:: 123 https://example.com/active #note',
+    'chat-done:: 234 https://example.com/done trailing'
+  ].join('\n');
+
+  const links = extract_links_from_source({ codeblock_source: source, link_regex });
+
+  t.deepEqual(links, [
+    { url: 'https://example.com/active', done: false },
+    { url: 'https://example.com/done', done: true }
+  ]);
+});
+
 test('resolves initial link to first not-done entry', t => {
   const links = [
     { url: 'https://example.com/done', done: true },
@@ -176,4 +190,3 @@ test('rejects invalid openwebui thread links', t => {
     t.false(is_openwebui_thread_link(url), url);
   }
 });
-

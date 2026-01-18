@@ -9,18 +9,18 @@ export function extract_links_from_source({ codeblock_source, link_regex }) {
 
     if (trimmed.startsWith('chat-done:: ')) {
       const tokens = trimmed.split(/\s+/);
-      const possible_url = tokens[tokens.length - 1];
-      if (possible_url.startsWith('http')) {
-        result.push({ url: possible_url, done: true });
+      const url_token = tokens.find(token => token.startsWith('http'));
+      if (url_token) {
+        result.push({ url: url_token, done: true });
       }
       continue;
     }
 
     if (trimmed.startsWith('chat-active:: ')) {
       const tokens = trimmed.split(/\s+/);
-      const possible_url = tokens[tokens.length - 1];
-      if (possible_url.startsWith('http')) {
-        result.push({ url: possible_url, done: false });
+      const url_token = tokens.find(token => token.startsWith('http'));
+      if (url_token) {
+        result.push({ url: url_token, done: false });
       }
       continue;
     }
