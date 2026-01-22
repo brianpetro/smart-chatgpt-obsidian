@@ -10,6 +10,16 @@ const CODEX_HOSTNAMES = new Set([
 ]);
 
 /**
+ * @param {Object} params
+ * @param {HTMLElement|null} params.footer_parent_el
+ * @param {HTMLElement|null} params.status_parent_el
+ * @returns {HTMLElement|null}
+ */
+export const resolve_codex_diff_button_parent = ({ footer_parent_el, status_parent_el }) => {
+  return footer_parent_el || status_parent_el || null;
+};
+
+/**
  * @param {string} url
  * @returns {boolean}
  */
@@ -81,9 +91,11 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
 
   _ensure_codex_diff_button() {
     if (this.codex_diff_button_el) return;
-    if (!this.status_text_el) return;
+    if (!this.container_el) return;
 
-    const parent_el = this.status_text_el.parentElement;
+    const footer_parent_el = this.container_el.querySelector?.('.sc-bottom-row-right') || null;
+    const status_parent_el = this.status_text_el?.parentElement || null;
+    const parent_el = resolve_codex_diff_button_parent({ footer_parent_el, status_parent_el });
     if (!parent_el || typeof parent_el.createEl !== 'function') return;
 
     const btn = parent_el.createEl('button', {
@@ -93,10 +105,19 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
 
     btn.setAttribute('aria-label', 'Codex: expand all diff sections and click any Load diff buttons');
 
-    // Place the button immediately before the status text so the status stays right-aligned.
-    try {
-      parent_el.insertBefore(btn, this.status_text_el);
-    } catch (_) {}
+    if (footer_parent_el && parent_el.insertBefore) {
+      const insert_target = parent_el.firstChild;
+      if (insert_target) {
+        try {
+          parent_el.insertBefore(btn, insert_target);
+        } catch (_) {}
+      }
+    } else if (this.status_text_el) {
+      // Fallback: place before the status text in the header row.
+      try {
+        parent_el.insertBefore(btn, this.status_text_el);
+      } catch (_) {}
+    }
 
     btn.onclick = async () => {
       await this._run_codex_diff_loader_for_current_url();
