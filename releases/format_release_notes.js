@@ -1,6 +1,6 @@
 import {
   write_plugin_release_notes,
-} from 'obsidian-smart-env/utils/release_notes.js';
+} from 'obsidian-smart-env/build/release_notes.js';
 
 import fs from 'fs';
 import path from 'path';
