@@ -1,5 +1,5 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
-import { is_openwebui_thread_link } from '../utils/smart_chat_codeblock.helpers.js';
+import { is_openwebui_thread_link, line_contains_url } from '../utils/smart_chat_codeblock.helpers.js';
 
 const DEFAULT_OPENWEBUI_BASE_URL = 'http://localhost:3000/';
 
@@ -132,12 +132,12 @@ export class SmartOpenWebuiCodeblock extends SmartChatCodeblock {
 
       const lines = raw_data.split('\n').slice(start + 1, end);
       for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('chat-active:: ') || trimmed.startsWith('chat-done:: ')) {
-          const last_token = trimmed.split(/\s+/).pop();
-          if (candidates.includes(last_token)) return true;
-        } else {
-          if (candidates.some(candidate => line.includes(candidate))) return true;
+        if (candidates.some(candidate => line_contains_url({
+          line,
+          target_url: candidate,
+          link_regex: this.link_regex
+        }))) {
+          return true;
         }
       }
       return false;
@@ -162,9 +162,13 @@ export class SmartOpenWebuiCodeblock extends SmartChatCodeblock {
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed.startsWith('chat-done:: ')) continue;
-
-        const last_token = trimmed.split(/\s+/).pop();
-        if (candidates.includes(last_token)) return true;
+        if (candidates.some(candidate => line_contains_url({
+          line,
+          target_url: candidate,
+          link_regex: this.link_regex
+        }))) {
+          return true;
+        }
       }
       return false;
     } catch (err) {

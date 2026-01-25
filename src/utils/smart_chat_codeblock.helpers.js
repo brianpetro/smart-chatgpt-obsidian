@@ -1,33 +1,72 @@
 import { URL } from 'url';
+
+const DEFAULT_LINK_REGEX = /(https?:\/\/[^\s]+)/g;
+const MARKDOWN_LINK_REGEX = /\((https?:\/\/[^)\s]+)\)/g;
+const URL_TRAILING_CHARS_REGEX = /[)\].,>;:"']+$/;
+const URL_LEADING_CHARS_REGEX = /^[<(]+/;
+
+export function strip_wrapping_url_chars(url_value) {
+  const raw_value = String(url_value || '');
+  const no_trailing = raw_value.replace(URL_TRAILING_CHARS_REGEX, '');
+  return no_trailing.replace(URL_LEADING_CHARS_REGEX, '');
+}
+
+export function extract_urls_from_line({ line, link_regex }) {
+  const raw_line = String(line || '');
+  const regex = link_regex || DEFAULT_LINK_REGEX;
+  const urls = [];
+
+  let md_match = null;
+  while ((md_match = MARKDOWN_LINK_REGEX.exec(raw_line)) !== null) {
+    urls.push(md_match[1]);
+  }
+
+  const raw_matches = raw_line.match(regex) || [];
+  raw_matches.forEach(match => {
+    urls.push(strip_wrapping_url_chars(match));
+  });
+
+  return Array.from(new Set(urls.filter(Boolean)));
+}
+
+export function line_contains_url({ line, target_url, link_regex }) {
+  if (!line || !target_url) return false;
+  const normalized_target_url = normalize_url_value(target_url);
+  const candidates = extract_urls_from_line({ line, link_regex });
+  return candidates.some(candidate => {
+    if (!candidate) return false;
+    const normalized_candidate = normalize_url_value(candidate);
+    return (
+      candidate === target_url ||
+      candidate === normalized_target_url ||
+      normalized_candidate === normalized_target_url
+    );
+  });
+}
+
 export function extract_links_from_source({ codeblock_source, link_regex }) {
   const lines = String(codeblock_source || '').split('\n');
   const result = [];
-  const regex = link_regex || /(https?:\/\/[^\s]+)/g;
+  const regex = link_regex || DEFAULT_LINK_REGEX;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     if (trimmed.startsWith('chat-done:: ')) {
-      const tokens = trimmed.split(/\s+/);
-      const url_token = tokens.find(token => token.startsWith('http'));
-      if (url_token) {
-        result.push({ url: url_token, done: true });
-      }
+      const [url_token] = extract_urls_from_line({ line: trimmed, link_regex: regex });
+      if (url_token) result.push({ url: url_token, done: true });
       continue;
     }
 
     if (trimmed.startsWith('chat-active:: ')) {
-      const tokens = trimmed.split(/\s+/);
-      const url_token = tokens.find(token => token.startsWith('http'));
-      if (url_token) {
-        result.push({ url: url_token, done: false });
-      }
+      const [url_token] = extract_urls_from_line({ line: trimmed, link_regex: regex });
+      if (url_token) result.push({ url: url_token, done: false });
       continue;
     }
 
-    const found = line.match(regex) || [];
-    for (const f of found) {
-      result.push({ url: f, done: false });
+    const found = extract_urls_from_line({ line, link_regex: regex });
+    for (const url of found) {
+      result.push({ url, done: false });
     }
   }
 

@@ -1,4 +1,5 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
+import { line_contains_url } from '../utils/smart_chat_codeblock.helpers.js';
 
 export class SmartPerplexityCodeblock extends SmartChatCodeblock {
   /**
@@ -70,14 +71,7 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
 
       const lines = raw_data.split('\n').slice(start + 1, end);
       for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('chat-active:: ') || trimmed.startsWith('chat-done:: ')) {
-          const tokens = trimmed.split(/\s+/);
-          const lastToken = tokens[tokens.length - 1];
-          if (lastToken === url) {
-            return true;
-          }
-        } else if (line.includes(url)) {
+        if (line_contains_url({ line, target_url: url, link_regex: this.link_regex })) {
           return true;
         }
       }
@@ -98,12 +92,9 @@ export class SmartPerplexityCodeblock extends SmartChatCodeblock {
       const lines = raw_data.split('\n').slice(start + 1, end);
       for (const line of lines) {
         const trimmed = line.trim();
-        if (trimmed.startsWith('chat-done:: ')) {
-          const tokens = trimmed.split(/\s+/);
-          const lastToken = tokens[tokens.length - 1];
-          if (lastToken === url) {
-            return true;
-          }
+        if (!trimmed.startsWith('chat-done:: ')) continue;
+        if (line_contains_url({ line, target_url: url, link_regex: this.link_regex })) {
+          return true;
         }
       }
       return false;

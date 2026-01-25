@@ -7,6 +7,7 @@ import {
   resolve_initial_link_from_links,
   is_grok_thread_link,
   is_openwebui_thread_link,
+  line_contains_url,
 } from './smart_chat_codeblock.helpers.js';
 
 const link_regex = /(https?:\/\/[^\s]+)/g;
@@ -38,6 +39,22 @@ test('extracts chat links when trailing tokens are present', t => {
   t.deepEqual(links, [
     { url: 'https://example.com/active', done: false },
     { url: 'https://example.com/done', done: true }
+  ]);
+});
+
+test('extracts chat links from markdown link lines', t => {
+  const source = [
+    'chat-active:: 123 [Active thread](https://example.com/active)',
+    'chat-done:: 234 [Done](https://example.com/done)',
+    'See [Other](https://example.com/other) for details'
+  ].join('\n');
+
+  const links = extract_links_from_source({ codeblock_source: source, link_regex });
+
+  t.deepEqual(links, [
+    { url: 'https://example.com/active', done: false },
+    { url: 'https://example.com/done', done: true },
+    { url: 'https://example.com/other', done: false }
   ]);
 });
 
@@ -132,6 +149,26 @@ test('resolve_initial_fallback_url prefers initial fallback when set', t => {
     resolve_initial_fallback_url({ initial_fallback_url: '', fallback_url: 'https://example.com/fallback' }),
     'https://example.com/fallback'
   );
+});
+
+test('line_contains_url matches markdown and cleaned tokens', t => {
+  t.true(line_contains_url({
+    line: 'chat-active:: 123 [Thread](https://example.com/active)',
+    target_url: 'https://example.com/active',
+    link_regex
+  }));
+
+  t.true(line_contains_url({
+    line: 'chat-done:: 123 https://example.com/active)',
+    target_url: 'https://example.com/active',
+    link_regex
+  }));
+
+  t.false(line_contains_url({
+    line: 'chat-active:: 123 https://example.com/other',
+    target_url: 'https://example.com/active',
+    link_regex
+  }));
 });
 
 

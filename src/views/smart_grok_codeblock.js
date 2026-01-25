@@ -1,5 +1,5 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
-import { is_grok_thread_link } from '../utils/smart_chat_codeblock.helpers.js';
+import { is_grok_thread_link, line_contains_url } from '../utils/smart_chat_codeblock.helpers.js';
 
 export class SmartGrokCodeblock extends SmartChatCodeblock {
   /**
@@ -94,12 +94,12 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
 
       const lines = raw_data.split('\n').slice(start + 1, end);
       for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('chat-active:: ') || trimmed.startsWith('chat-done:: ')) {
-          const lastToken = trimmed.split(/\s+/).pop();
-          if (candidates.includes(lastToken)) return true;
-        } else {
-          if (candidates.some(c => line.includes(c))) return true;
+        if (candidates.some(candidate => line_contains_url({
+          line,
+          target_url: candidate,
+          link_regex: this.link_regex
+        }))) {
+          return true;
         }
       }
       return false;
@@ -124,9 +124,13 @@ export class SmartGrokCodeblock extends SmartChatCodeblock {
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed.startsWith('chat-done:: ')) continue;
-
-        const lastToken = trimmed.split(/\s+/).pop();
-        if (candidates.includes(lastToken)) return true;
+        if (candidates.some(candidate => line_contains_url({
+          line,
+          target_url: candidate,
+          link_regex: this.link_regex
+        }))) {
+          return true;
+        }
       }
       return false;
     } catch (err) {
