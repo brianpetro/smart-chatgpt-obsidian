@@ -28,9 +28,16 @@ Smart Chat keeps conversations inside your notes by embedding web chat apps dire
 - Provide a sidebar **Smart ChatGPT** view for quick access to ChatGPT in Obsidian.
 - Offer optional Smart Chat Pro workflows for API-based chat and routing.
 
-## Core vs Pro
-- **Core**: Embedded chat codeblocks + thread tracking inside notes.
-- **Pro**: API adapters, per-thread routing, and context tooling via Smart Environment actions. You decide what leaves your vault.
+## Core: Smart ChatGPT (embedded chat)
+- Provider codeblocks that render embedded chat UIs directly inside notes.
+- Thread URL tracking with `chat-active` and `chat-done` fields saved in your notes.
+- Dataview dashboards for in-progress and completed threads.
+- **Smart ChatGPT** sidebar view for quick access without leaving your current file.
+
+## Optional: Smart Chat Pro (API routing)
+- API adapters, per-thread routing, and context tooling via Smart Environment actions.
+- Explicit routing: choose which threads talk to cloud providers vs local models.
+- Review context before sending so you decide what leaves your vault.
 
 ## Quick start (core)
 > [!TLDR] 3 steps
