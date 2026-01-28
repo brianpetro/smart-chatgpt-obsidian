@@ -2,6 +2,11 @@ import { SmartChatCodeblock } from './smart_chat_codeblock.js';
 import { is_chatgpt_thread_link } from '../utils/chatgpt_thread_link.js';
 import { build_codex_diff_loader_execute_script } from '../utils/build_codex_diff_loader_execute_script.js';
 import { line_contains_url } from '../utils/smart_chat_codeblock.helpers.js';
+import {
+  build_chatgpt_conversation_url,
+  merge_chatgpt_conversation_items,
+} from '../utils/chatgpt_conversation_item.js';
+import { ChatgptThreadSuggestModal } from '../modals/add_thread_suggest_modal.js';
 
 const CODEX_TASK_PATH_REGEX = /^\/codex\/tasks\/[a-z0-9-_]+\/?$/i;
 
@@ -9,6 +14,8 @@ const CODEX_HOSTNAMES = new Set([
   'chatgpt.com',
   'chat.openai.com'
 ]);
+
+const ADD_THREAD_BUTTON_LABEL = 'Add thread';
 
 /**
  * @param {Object} params
@@ -61,6 +68,9 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
 
     this.codex_diff_button_el = null;
     this._codex_diff_button_busy = false;
+
+    this.add_thread_button_el = null;
+    this._add_thread_button_busy = false;
   }
 
   async build() {
@@ -68,10 +78,16 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     this.codex_diff_button_el = null;
     this._codex_diff_button_busy = false;
 
+    this.add_thread_button_el = null;
+    this._add_thread_button_busy = false;
+
     await super.build();
 
     // Best-effort sync after full build; _render_save_ui also syncs.
     this._sync_codex_diff_button(this.current_url);
+
+    // Detected threads may already exist (if rebuild); ensure button state matches.
+    this._sync_add_thread_button();
   }
 
   add_dropdown_options() {
@@ -193,9 +209,156 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     }
   }
 
+  _ensure_add_thread_button() {
+    if (this.add_thread_button_el) return;
+    if (!this.container_el) return;
+
+    const parent_el = this.mark_done_button_el?.parentElement
+      || this.container_el.querySelector?.('.sc-top-row')
+      || null;
+
+    if (!parent_el || typeof parent_el.createEl !== 'function') return;
+
+    const btn = parent_el.createEl('button', {
+      text: ADD_THREAD_BUTTON_LABEL,
+      cls: 'sc-add-thread-button sc-hidden'
+    });
+
+    btn.setAttribute('aria-label', 'Add a thread from detected ChatGPT conversations');
+
+    if (this.mark_done_button_el && parent_el.insertBefore) {
+      try {
+        parent_el.insertBefore(btn, this.mark_done_button_el);
+      } catch (_) {}
+    }
+
+    btn.onclick = () => {
+      this._open_add_thread_modal();
+    };
+
+    this.add_thread_button_el = btn;
+  }
+
+  _set_add_thread_button_visible(visible) {
+    if (!this.add_thread_button_el) return;
+
+    if (visible) {
+      try {
+        this.add_thread_button_el.classList.remove('sc-hidden');
+      } catch (_) {}
+      try {
+        this.add_thread_button_el.style.display = '';
+      } catch (_) {}
+      return;
+    }
+
+    try {
+      this.add_thread_button_el.classList.add('sc-hidden');
+    } catch (_) {}
+    try {
+      this.add_thread_button_el.style.display = 'none';
+    } catch (_) {}
+  }
+
+  /**
+   * Called by handle_chatgpt_threads_list_detection() when new conversation items are merged in.
+   */
+  _on_detected_threads_updated() {
+    this._sync_add_thread_button();
+  }
+
+  _get_detected_thread_suggestions() {
+    const threads = Array.isArray(this._detected_threads) ? this._detected_threads : [];
+    return merge_chatgpt_conversation_items([], threads).filter(t => String(t?.id || '').trim());
+  }
+
+  _sync_add_thread_button() {
+    this._ensure_add_thread_button();
+    const has_threads = this._get_detected_thread_suggestions().length > 0;
+    this._set_add_thread_button_visible(has_threads);
+  }
+
+  _open_add_thread_modal() {
+    const threads = this._get_detected_thread_suggestions();
+
+    if (!threads.length) {
+      this.plugin?.notices?.show?.('No threads detected yet.');
+      return;
+    }
+
+    const modal = new ChatgptThreadSuggestModal(this.plugin.app, {
+      threads,
+      on_choose: (thread) => {
+        this._add_detected_thread_to_codeblock(thread);
+      }
+    });
+
+    modal.open();
+  }
+
+  async _add_detected_thread_to_codeblock(thread) {
+    if (this._add_thread_button_busy) return;
+
+    const raw_url = build_chatgpt_conversation_url(thread);
+    const url = this._normalize_url(raw_url);
+
+    if (!url || !url.startsWith('http')) {
+      this.plugin?.notices?.show?.('Could not build a valid ChatGPT thread URL.');
+      return;
+    }
+
+    const btn = this.add_thread_button_el;
+    const original_text = btn?.textContent || ADD_THREAD_BUTTON_LABEL;
+
+    this._add_thread_button_busy = true;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+    }
+
+    try {
+      const already_saved = await this._check_if_saved?.(url);
+      if (!already_saved) {
+        await this._insert_link_into_codeblock(url);
+        this.plugin.env?.events?.emit?.('chat_codeblock:added_thread', { url, origin: 'detected_threads' });
+        this.plugin?.notices?.show?.('Added thread to codeblock.');
+      } else {
+        this.plugin?.notices?.show?.('Thread already saved in this codeblock.');
+      }
+
+      this.current_url = url;
+      this._skip_auto_save_url = url;
+
+      // Ensure dropdown options include it and select it.
+      try {
+        this._build_dropdown();
+      } catch (_) {}
+
+      if (this.webview_el) {
+        this.webview_el.setAttribute('src', url);
+      }
+
+      if (typeof this._render_save_ui === 'function') {
+        await this._render_save_ui(url);
+      }
+    } catch (err) {
+      console.error('Failed adding detected thread:', err);
+      this.plugin?.notices?.show?.('Failed to add thread. See console.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = original_text;
+      }
+      this._add_thread_button_busy = false;
+    }
+  }
+
   async _render_save_ui(url) {
     // Keep the button in sync on every URL change and dropdown selection.
     this._sync_codex_diff_button(url);
+
+    // Keep Add thread visibility synced (in case rebuilds happen mid-session).
+    this._sync_add_thread_button();
 
     this._set_status_text('');
     this._hide_mark_done_button();

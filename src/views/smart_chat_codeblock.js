@@ -45,6 +45,7 @@ export class SmartChatCodeblock {
     this.initial_link = '';
     this.last_detected_url = '';
     this.current_url = '';
+    this._skip_auto_save_url = '';
 
     this.dropdown_container_el = null;
     this.dropdown_row_el = null;
@@ -677,6 +678,15 @@ export class SmartChatCodeblock {
 
     this.last_detected_url = new_url;
     this.current_url = new_url;
+
+    const norm_skip = this._normalize_url(this._skip_auto_save_url || '');
+    if (norm_skip && norm_new === norm_skip) {
+      this._skip_auto_save_url = '';
+      if (typeof this._render_save_ui === 'function') {
+        this._render_save_ui(new_url);
+      }
+      return;
+    }
 
     if (typeof this._is_thread_link === 'function' && this._is_thread_link(new_url)) {
       const link_to_save = this._normalize_url(new_url);

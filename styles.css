@@ -33,6 +33,11 @@
   height: 16px;
 }
 
+/* "Add thread" button (ChatGPT detected threads) */
+.sc-add-thread-button {
+  white-space: nowrap;
+}
+
 /* Layout for the bottom row of codeblock UI */
 .sc-bottom-row {
   display: flex;

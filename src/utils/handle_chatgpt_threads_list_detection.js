@@ -1,26 +1,68 @@
-export function handle_chatgpt_threads_list_detection(codeblock_cls_instance) {
-  codeblock_cls_instance.webview_el.addEventListener('console-message', (e) => {
-    const msg = e.message || '';
-    if (!msg.startsWith('[SC_NET]')) {
-      // console.log('[webview console]', e.level, msg, e.line, e.sourceId);
-      return;
-    }
+import { merge_chatgpt_conversation_items } from './chatgpt_conversation_item.js';
 
-    const json = msg.slice('[SC_NET]'.length).trim();
-    let payload = null;
-    try { payload = JSON.parse(json); } catch (_) { }
-    if (payload.url.includes("backend-api/conversations")) {
-      const parsed = {
+const SC_NET_PREFIX = '[SC_NET]';
+
+/**
+ * @param {string} raw_json
+ * @returns {any|null}
+ */
+const try_parse_json = (raw_json) => {
+  try {
+    return JSON.parse(String(raw_json || '').trim());
+  } catch (_) {
+    return null;
+  }
+};
+
+/**
+ * Watches ChatGPT webview network calls and extracts conversation list items.
+ *
+ * Expected payloads:
+ * - backend-api/conversations -> { items: [...] }
+ *
+ * @param {any} codeblock_cls_instance
+ */
+export function handle_chatgpt_threads_list_detection(codeblock_cls_instance) {
+  if (!codeblock_cls_instance?.webview_el?.addEventListener) return;
+
+  const update_detected_threads = (threads = []) => {
+    const existing = Array.isArray(codeblock_cls_instance._detected_threads)
+      ? codeblock_cls_instance._detected_threads
+      : [];
+
+    const merged = merge_chatgpt_conversation_items(existing, Array.isArray(threads) ? threads : []);
+    codeblock_cls_instance._detected_threads = merged;
+
+    if (typeof codeblock_cls_instance._on_detected_threads_updated === 'function') {
+      try {
+        codeblock_cls_instance._on_detected_threads_updated(merged);
+      } catch (err) {
+        console.error('Error in _on_detected_threads_updated:', err);
+      }
+    }
+  };
+
+  codeblock_cls_instance.webview_el.addEventListener('console-message', (e) => {
+    const msg = e?.message || '';
+    if (!msg.startsWith(SC_NET_PREFIX)) return;
+
+    const json = msg.slice(SC_NET_PREFIX.length).trim();
+    const payload = try_parse_json(json);
+    if (!payload || !payload.url) return;
+
+    const request_url = String(payload.url || '');
+
+    if (request_url.includes('backend-api/conversations')) {
+      const body = try_parse_json(payload.response_body || '{}') || {};
+      const threads = Array.isArray(body.items) ? body.items : [];
+
+      update_detected_threads(threads);
+
+      console.log('Smart ChatGPT conversations response:', {
         current_url: codeblock_cls_instance.webview_el.getURL?.() || undefined,
-        request_url: payload?.url,
-        threads: JSON.parse(payload.response_body || '{}')?.items || []
-      };
-      console.log('Smart ChatGPT conversations response:', parsed);
-      codeblock_cls_instance._detected_threads = [
-        ...codeblock_cls_instance._detected_threads || [],
-        ...parsed.threads || [],
-      ];
-      console.log("codeblock class", codeblock_cls_instance);
+        request_url,
+        threads_count: threads.length
+      });
     }
   });
 
@@ -32,12 +74,12 @@ export function handle_chatgpt_threads_list_detection(codeblock_cls_instance) {
 
     const payload = event.args?.[0];
     console.log('Smart ChatGPT conversations response:', {
-      // trigger,
       current_url: codeblock_cls_instance.webview_el.getURL?.() || undefined,
       request_url: payload?.url,
       response: payload
     });
   });
+
   codeblock_cls_instance.webview_el.addEventListener('did-finish-load', async () => {
     const inject = `
       (() => {
@@ -46,7 +88,7 @@ export function handle_chatgpt_threads_list_detection(codeblock_cls_instance) {
 
         const log = (payload) => {
           try {
-            console.log('[SC_NET]', JSON.stringify(payload));
+            console.log('${SC_NET_PREFIX}', JSON.stringify(payload));
           } catch (_) {}
         };
 
