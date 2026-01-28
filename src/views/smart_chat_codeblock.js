@@ -7,6 +7,7 @@ import {
   resolve_initial_fallback_url,
   resolve_initial_link_from_links
 } from '../utils/smart_chat_codeblock.helpers.js';
+import { handle_chatgpt_threads_list_detection } from '../utils/handle_chatgpt_threads_list_detection.js';
 
 const DEFAULT_WEBVIEW_USERAGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.191 Safari/537.36';
@@ -55,6 +56,7 @@ export class SmartChatCodeblock {
     this.help_button_el = null;
     this.status_text_el = null;
     this.webview_el = null;
+    this._detected_threads = [];
 
     this.refresh_button_el = null;
     this.open_browser_button_el = null;
@@ -167,6 +169,7 @@ export class SmartChatCodeblock {
       this.webview_el.setAttribute('useragent', DEFAULT_WEBVIEW_USERAGENT);
       this.webview_el.setAttribute('webpreferences', DEFAULT_WEBVIEW_PREFERENCES);
       this.webview_el.style.setProperty('--sc-webview-height', webview_height + 'px');
+      handle_chatgpt_threads_list_detection(this);
 
       const initial_src = this.current_url || this.initial_link || this._FALLBACK_URL;
       if (initial_src?.startsWith('http')) {
