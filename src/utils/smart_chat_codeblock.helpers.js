@@ -202,3 +202,53 @@ export function is_openwebui_thread_link(url) {
     return false;
   }
 }
+
+/**
+ * Determine if a URL points to a Kimi chat thread.
+ *
+ * Kimi threads are commonly shared under:
+ * - https://www.kimi.com/share/<id>
+ * - https://www.kimi.com/share/en/<id>
+ *
+ * We treat any '/share/.../<id>' route as a thread, with an optional language
+ * segment between 'share' and the id.
+ *
+ * @param {string} url - URL to test.
+ * @returns {boolean} True when the URL matches a supported Kimi thread.
+ */
+export function is_kimi_thread_link(url) {
+  const SUPPORTED_DOMAINS = [
+    'kimi.com',
+    'www.kimi.com'
+  ];
+
+  try {
+    const u = new URL(url);
+    if (!SUPPORTED_DOMAINS.includes(u.hostname)) return false;
+
+    const segments = (u.pathname || '')
+      .split('/')
+      .filter(Boolean)
+      .map(segment => String(segment));
+
+    const share_index = segments.findIndex(s => String(s).toLowerCase() === 'chat');
+    if (share_index < 0) return false;
+
+    const next_segment = segments[share_index + 1];
+    if (!next_segment) return false;
+
+    let id_index = share_index + 1;
+
+    const maybe_locale = String(segments[id_index] || '').toLowerCase();
+    if (maybe_locale.length === 2 || maybe_locale === 'en') {
+      id_index += 1;
+    }
+
+    const thread_id = segments[id_index];
+    if (!thread_id) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}

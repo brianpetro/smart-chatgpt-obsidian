@@ -6,6 +6,7 @@ import {
   resolve_initial_fallback_url,
   resolve_initial_link_from_links,
   is_grok_thread_link,
+  is_kimi_thread_link,
   is_openwebui_thread_link,
   line_contains_url,
 } from './smart_chat_codeblock.helpers.js';
@@ -204,5 +205,33 @@ test('recognizes valid openwebui thread links', t => {
 test('rejects invalid openwebui thread links', t => {
   for (const url of invalid_openwebui_threads) {
     t.false(is_openwebui_thread_link(url), url);
+  }
+});
+
+const valid_kimi_threads = [
+  'https://www.kimi.com/chat/19c003f5-acb2-838b-8000-00006aa45d9b',
+  'https://www.kimi.com/chat/en/19a99d62-6062-830d-8000-0000fb11a176',
+  'https://kimi.com/chat/cn2dgno3r07f4fk1dc70',
+  'https://www.kimi.com/chat/d2nk785e09netp2mb9bg?utm_source=test',
+  'https://www.kimi.com/chat/en/d3ggof8l3dccogoni3n0'
+];
+
+const invalid_kimi_threads = [
+  'https://www.kimi.com/',
+  'https://www.kimi.com/en',
+  'https://example.com/chat/123',
+  'https://www.kimi.com/chat/',
+  'not a url'
+];
+
+test('recognizes valid kimi thread links', t => {
+  for (const url of valid_kimi_threads) {
+    t.true(is_kimi_thread_link(url), url);
+  }
+});
+
+test('rejects invalid kimi thread links', t => {
+  for (const url of invalid_kimi_threads) {
+    t.false(is_kimi_thread_link(url), url);
   }
 });

@@ -12,6 +12,7 @@ import { SmartPerplexityCodeblock } from './views/smart_perplexity_codeblock.js'
 import { SmartGrokCodeblock }       from './views/smart_grok_codeblock.js';
 import { SmartAistudioCodeblock }   from './views/smart_aistudio_codeblock.js';
 import { SmartOpenWebuiCodeblock }  from './views/smart_openwebui_codeblock.js';
+import { SmartKimiCodeblock }       from './views/smart_kimi_codeblock.js';
 
 // DEPRECATED view from sc-obsidian
 import { SmartChatGPTView } from "./views/sc_chatgpt.obsidian.js";
@@ -71,7 +72,8 @@ export default class SmartChatgptPlugin extends SmartPlugin {
       ['smart-perplexity','Perplexity'],
       ['smart-grok',      'Grok'],
       ['smart-aistudio',  'Google AI Studio'],
-      ['smart-openwebui', 'Open WebUI']
+      ['smart-openwebui', 'Open WebUI'],
+      ['smart-kimi',      'Kimi']
     ];
     cmds.forEach(([lang, label]) => {
       this.addCommand({
@@ -133,7 +135,8 @@ export default class SmartChatgptPlugin extends SmartPlugin {
       'smart-perplexity': SmartPerplexityCodeblock,
       'smart-grok':       SmartGrokCodeblock,
       'smart-aistudio':   SmartAistudioCodeblock,
-      'smart-openwebui':  SmartOpenWebuiCodeblock
+      'smart-openwebui':  SmartOpenWebuiCodeblock,
+      'smart-kimi':       SmartKimiCodeblock
     };
 
     const makeProcessor = Cls => async (source, el, ctx) => {

@@ -8,6 +8,8 @@ const HOST_PLATFORM_LABELS = {
   'perplexity.ai': 'Perplexity',
   'grok.com': 'Grok',
   'www.grok.com': 'Grok',
+  'kimi.com': 'Kimi',
+  'www.kimi.com': 'Kimi',
   'sora.com': 'Sora',
   'sora.chatgpt.com': 'Sora'
 };
