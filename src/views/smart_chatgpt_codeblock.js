@@ -1,7 +1,10 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
 import { is_chatgpt_thread_link } from '../utils/chatgpt_thread_link.js';
 import { build_codex_diff_loader_execute_script } from '../utils/build_codex_diff_loader_execute_script.js';
-import { line_contains_url } from '../utils/smart_chat_codeblock.helpers.js';
+import {
+  line_contains_url,
+  resolve_add_thread_button_anchor,
+} from '../utils/smart_chat_codeblock.helpers.js';
 import {
   build_chatgpt_conversation_url,
   merge_chatgpt_conversation_items,
@@ -213,9 +216,13 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     if (this.add_thread_button_el) return;
     if (!this.container_el) return;
 
-    const parent_el = this.mark_done_button_el?.parentElement
-      || this.container_el.querySelector?.('.sc-top-row')
-      || null;
+    const footer_parent_el = this.container_el.querySelector?.('.sc-bottom-row-left') || null;
+    const header_parent_el = this.container_el.querySelector?.('.sc-top-row') || null;
+    const { parent_el, insert_before_el } = resolve_add_thread_button_anchor({
+      build_context_button_el: this.build_context_button_el,
+      footer_parent_el,
+      header_parent_el
+    });
 
     if (!parent_el || typeof parent_el.createEl !== 'function') return;
 
@@ -226,9 +233,9 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
 
     btn.setAttribute('aria-label', 'Add a thread from detected ChatGPT conversations');
 
-    if (this.mark_done_button_el && parent_el.insertBefore) {
+    if (parent_el.insertBefore) {
       try {
-        parent_el.insertBefore(btn, this.mark_done_button_el);
+        parent_el.insertBefore(btn, insert_before_el);
       } catch (_) {}
     }
 

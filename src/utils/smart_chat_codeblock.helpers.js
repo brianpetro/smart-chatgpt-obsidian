@@ -97,6 +97,33 @@ export function resolve_initial_link_from_links({ links = [], initial_fallback_u
   return resolve_initial_fallback_url({ initial_fallback_url, fallback_url });
 }
 
+export function resolve_add_thread_button_anchor({
+  build_context_button_el,
+  footer_parent_el,
+  header_parent_el
+}) {
+  const build_parent = build_context_button_el?.parentElement || null;
+  if (build_parent) {
+    return {
+      parent_el: build_parent,
+      insert_before_el: build_context_button_el?.nextSibling || null
+    };
+  }
+
+  if (footer_parent_el) {
+    return {
+      parent_el: footer_parent_el,
+      insert_before_el: footer_parent_el.firstChild || null
+    };
+  }
+
+  if (header_parent_el) {
+    return { parent_el: header_parent_el, insert_before_el: null };
+  }
+
+  return { parent_el: null, insert_before_el: null };
+}
+
 export function prefix_missing_chat_lines({ lines, start, end, link_regex, now_seconds }) {
   const regex = link_regex || /(https?:\/\/[^\s]+)/g;
   const updated_lines = Array.isArray(lines) ? [...lines] : [];

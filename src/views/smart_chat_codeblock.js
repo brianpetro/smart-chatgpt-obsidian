@@ -60,6 +60,7 @@ export class SmartChatCodeblock {
     this._detected_threads = [];
 
     this.refresh_button_el = null;
+    this.build_context_button_el = null;
     this.open_browser_button_el = null;
     this.copy_link_button_el = null;
     this.grow_contain_button_el = null;
@@ -122,6 +123,7 @@ export class SmartChatCodeblock {
     this.webview_el = null;
 
     this.refresh_button_el = null;
+    this.build_context_button_el = null;
     this.open_browser_button_el = null;
     this.copy_link_button_el = null;
     this.grow_contain_button_el = null;
@@ -572,6 +574,7 @@ export class SmartChatCodeblock {
       }
 
       if (label === 'Build context') {
+        this.build_context_button_el = btn;
         btn.classList.add('sc-build-context-button', 'sc-footer-build-context');
         btn.setAttribute('aria-label', 'Build context for this thread');
         this._bind_build_context_click(btn);

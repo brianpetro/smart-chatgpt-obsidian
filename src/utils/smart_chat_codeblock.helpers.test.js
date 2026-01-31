@@ -9,6 +9,7 @@ import {
   is_kimi_thread_link,
   is_openwebui_thread_link,
   line_contains_url,
+  resolve_add_thread_button_anchor,
 } from './smart_chat_codeblock.helpers.js';
 
 const link_regex = /(https?:\/\/[^\s]+)/g;
@@ -149,6 +150,50 @@ test('line_contains_url matches URLs', t => {
     target_url: 'https://example.com/active',
     link_regex
   }));
+});
+
+test('resolve_add_thread_button_anchor uses build context parent + next sibling', t => {
+  const parent_el = { id: 'footer-left' };
+  const next_el = { id: 'after-build' };
+  const build_context_button_el = {
+    parentElement: parent_el,
+    nextSibling: next_el
+  };
+
+  const result = resolve_add_thread_button_anchor({
+    build_context_button_el,
+    footer_parent_el: null,
+    header_parent_el: null
+  });
+
+  t.is(result.parent_el, parent_el);
+  t.is(result.insert_before_el, next_el);
+});
+
+test('resolve_add_thread_button_anchor falls back to footer parent', t => {
+  const footer_parent_el = { id: 'footer-left', firstChild: { id: 'first' } };
+
+  const result = resolve_add_thread_button_anchor({
+    build_context_button_el: null,
+    footer_parent_el,
+    header_parent_el: null
+  });
+
+  t.is(result.parent_el, footer_parent_el);
+  t.is(result.insert_before_el, footer_parent_el.firstChild);
+});
+
+test('resolve_add_thread_button_anchor falls back to header parent', t => {
+  const header_parent_el = { id: 'header' };
+
+  const result = resolve_add_thread_button_anchor({
+    build_context_button_el: null,
+    footer_parent_el: null,
+    header_parent_el
+  });
+
+  t.is(result.parent_el, header_parent_el);
+  t.is(result.insert_before_el, null);
 });
 
 
