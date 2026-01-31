@@ -1,6 +1,7 @@
 import test from 'ava';
 import {
   extract_links_from_source,
+  extract_urls_from_line,
   normalize_url_value,
   prefix_missing_chat_lines,
   resolve_initial_fallback_url,
@@ -148,6 +149,27 @@ test('line_contains_url matches URLs', t => {
   t.false(line_contains_url({
     line: 'chat-active:: 123 https://example.com/other',
     target_url: 'https://example.com/active',
+    link_regex
+  }));
+});
+
+test('extract_urls_from_line de-duplicates and strips wrapping punctuation', t => {
+  const source_line = 'See (https://example.com/alpha), and https://example.com/alpha.';
+
+  const urls = extract_urls_from_line({
+    line: source_line,
+    link_regex
+  });
+
+  t.deepEqual(urls, ['https://example.com/alpha']);
+});
+
+test('line_contains_url normalizes query/hash and punctuation', t => {
+  const source_line = 'chat-active:: 123 (https://example.com/path?query=1#hash),';
+
+  t.true(line_contains_url({
+    line: source_line,
+    target_url: 'https://example.com/path',
     link_regex
   }));
 });
