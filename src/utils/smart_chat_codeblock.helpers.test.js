@@ -85,6 +85,11 @@ test('returns normalized url without query or hash', t => {
   t.is(normalized, 'https://example.com/path');
 });
 
+test('normalize_url_value trims trailing slash for non-root paths', t => {
+  const normalized = normalize_url_value('https://example.com/path/');
+  t.is(normalized, 'https://example.com/path');
+});
+
 test('prefixes bare links with chat-active in range', t => {
   const lines = [
     '```smart-chatgpt',
@@ -166,6 +171,16 @@ test('extract_urls_from_line de-duplicates and strips wrapping punctuation', t =
 
 test('line_contains_url normalizes query/hash and punctuation', t => {
   const source_line = 'chat-active:: 123 (https://example.com/path?query=1#hash),';
+
+  t.true(line_contains_url({
+    line: source_line,
+    target_url: 'https://example.com/path',
+    link_regex
+  }));
+});
+
+test('line_contains_url matches trailing slash variants', t => {
+  const source_line = 'chat-active:: 123 https://example.com/path/';
 
   t.true(line_contains_url({
     line: source_line,

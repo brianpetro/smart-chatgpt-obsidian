@@ -78,6 +78,10 @@ export function normalize_url_value(url) {
     const normalized_url = new URL(url);
     normalized_url.search = '';
     normalized_url.hash = '';
+    const path_name = normalized_url.pathname || '';
+    if (path_name && path_name !== '/' && path_name.endsWith('/')) {
+      normalized_url.pathname = path_name.replace(/\/+$/, '');
+    }
     return normalized_url.toString();
   } catch (_) {
     return url;
