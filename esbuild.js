@@ -36,6 +36,21 @@ const destination_vaults = process.env.DESTINATION_VAULTS.split(',');
 
 // get first argument as entry point
 const entry_point = process.argv[2] || 'src/main.js';
+// markdown plugin
+const markdown_plugin = {
+  name: 'markdown',
+  setup(build) {
+    build.onLoad({ filter: /\.md$/ }, async (args) => {
+      if(args.with && args.with.type === 'markdown') {
+        const text = await fs.promises.readFile(args.path, 'utf8');
+        return {
+          contents: `export default ${JSON.stringify(text)};`,
+          loader: 'js'
+        };
+      }
+    });
+  }
+};
 
 // Build the project
 esbuild.build({
@@ -59,6 +74,7 @@ esbuild.build({
   loader: {
     '.css': 'text',
   },
+  plugins: [markdown_plugin],
   define: {
   },
 }).then(() => {

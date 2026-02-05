@@ -17,6 +17,7 @@ import { SmartKimiCodeblock }       from './views/smart_kimi_codeblock.js';
 // DEPRECATED view from sc-obsidian
 import { SmartChatGPTView } from "./views/sc_chatgpt.obsidian.js";
 import { SmartChatgptSettingTab } from './views/settings_tab.js';
+import { ReleaseNotesView } from './views/release_notes_view.js';
 
 /**
  * @typedef {Object} SmartChatgptPluginSettings
@@ -31,6 +32,7 @@ const DEFAULT_SETTINGS = {
 };
 
 export default class SmartChatgptPlugin extends SmartPlugin {
+  ReleaseNotesView = ReleaseNotesView;
   get env () {
     return window?.smart_env;
   }
@@ -38,12 +40,17 @@ export default class SmartChatgptPlugin extends SmartPlugin {
   settings = DEFAULT_SETTINGS;
 
   async onload() {
+    this.app.workspace.onLayoutReady(this.initialize.bind(this)); // initialize when layout is ready
     this.SmartEnv.create(this, {});
     await this.loadSettings();
 
     this.register_all();
     this.addSettingTab(new SmartChatgptSettingTab(this.app, this));
     this.register_chatgpt_view();
+  }
+  async initialize() {
+    await this.SmartEnv.wait_for({ loaded: true });
+    await this.check_for_updates();
   }
 
   async loadSettings() {
@@ -59,7 +66,14 @@ export default class SmartChatgptPlugin extends SmartPlugin {
 
   register_all() {
     this.register_commands();
+    this.register_item_views();
     this.register_dynamic_codeblocks();
+  }
+
+  get item_views() {
+    return {
+      ReleaseNotesView: this.ReleaseNotesView,
+    };
   }
 
   register_commands() {
@@ -190,6 +204,10 @@ export default class SmartChatgptPlugin extends SmartPlugin {
       get: () => SmartChatGPTView.get_view(this.app.workspace)
     });
     this["open_" + method_name] = () => SmartChatGPTView.open(this.app.workspace);
+  }
+
+  show_release_notes() {
+    return this.ReleaseNotesView.open(this.app.workspace, this.manifest.version);
   }
 
 }
