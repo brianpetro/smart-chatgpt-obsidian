@@ -183,6 +183,7 @@ export class SmartChatCodeblock {
         const factor = this.plugin?.settings?.zoom_factor || 1.0;
         try {
           this.webview_el.setZoomFactor(factor);
+          // this.webview_el.openDevTools({ mode: 'detach' });
         } catch (_) {}
       });
 
