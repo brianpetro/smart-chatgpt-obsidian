@@ -7,7 +7,7 @@
 .sc-dynamic-codeblock {
   border: 1px solid var(--color-border);
   padding: 8px;
-  margin: 8px 0;
+  margin: 0;
 }
 
 /* Layout for the top row of codeblock UI */
@@ -176,3 +176,12 @@
 .sc-no-webview .sc-footer-grow {
   display: none;
 }
+
+/* Keep CodeMirror block-widget layout stable across themes.
+   Narrowly overrides themes like LYT that remove containment from
+   top-level non-editable CM6 embeds. */
+/* THIS MAY BE OK TO REMOVE (removing vertical margin from .sc-dynamic-codeblock should be sufficient):
+LEAVING TEMPORARILY IN CASE NOTICING THE ISSUE AGAIN */
+/* .markdown-source-view.mod-cm6 .cm-content > [contenteditable=false]:has(.sc-dynamic-codeblock) {
+  contain: layout !important;
+} */
