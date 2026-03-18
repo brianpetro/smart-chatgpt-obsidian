@@ -60,11 +60,13 @@ export class SmartChatGPTView extends ItemView {
       const current_url = this.frame?.getAttribute("src");
       if (current_url) {
         navigator.clipboard.writeText(current_url);
-        // Optional: Show a notice that URL was copied
-        if (this.plugin) {
-          window.smart_env?.events?.emit('chatgpt:url_copied', { url: current_url });
-          this.plugin.notices.show("copied_chatgpt_url_to_clipboard");
-        }
+        const env = this.plugin.env || window.smart_env;
+        env?.events?.emit('chatgpt:url_copied', {
+          level: 'info',
+          message: 'Copied current URL to clipboard.',
+          event_source: 'chatgpt_item_view',
+          url: current_url,
+        });
       }
     });
 

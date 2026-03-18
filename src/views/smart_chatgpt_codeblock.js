@@ -289,7 +289,11 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     const threads = this._get_detected_thread_suggestions();
 
     if (!threads.length) {
-      this.plugin?.notices?.show?.('No threads detected yet.');
+      this.emit_event('chat_codeblock:threads_not_detected', {
+        level: 'warning',
+        message: 'No threads detected yet.',
+        event_source: 'chatgpt_codeblock',
+      });
       return;
     }
 
@@ -310,7 +314,11 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     const url = this._normalize_url(raw_url);
 
     if (!url || !url.startsWith('http')) {
-      this.plugin?.notices?.show?.('Could not build a valid ChatGPT thread URL.');
+      this.emit_event('chat_codeblock:thread_url_invalid', {
+        level: 'error',
+        message: 'Could not build a valid ChatGPT thread URL.',
+        event_source: 'chatgpt_codeblock',
+      });
       return;
     }
 
@@ -328,9 +336,17 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
       if (!already_saved) {
         await this._insert_link_into_codeblock(url);
         this.plugin.env?.events?.emit?.('chat_codeblock:added_thread', { url, origin: 'detected_threads' });
-        this.plugin?.notices?.show?.('Added thread to codeblock.');
+        this.emit_event('chat_codeblock:thread_added', {
+          message: 'Added thread to codeblock.',
+          event_source: 'chatgpt_codeblock',
+          url,
+        });
       } else {
-        this.plugin?.notices?.show?.('Thread already saved in this codeblock.');
+        this.emit_event('chat_codeblock:thread_already_saved', {
+          message: 'Thread already saved in this codeblock.',
+          event_source: 'chatgpt_codeblock',
+          url,
+        });
       }
 
       this.current_url = url;
@@ -350,7 +366,11 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
       }
     } catch (err) {
       console.error('Failed adding detected thread:', err);
-      this.plugin?.notices?.show?.('Failed to add thread. See console.');
+      this.emit_event('chat_codeblock:add_thread_failed', {
+        level: 'error',
+        message: 'Failed to add thread. See console.',
+        event_source: 'chatgpt_codeblock',
+      });
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -387,8 +407,11 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
       if (this.mark_done_button_el) {
         this.mark_done_button_el.onclick = async () => {
           await this._mark_thread_done_in_codeblock(link_to_check);
-          this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url: link_to_check });
-          this.plugin.notices.show('Marked thread as done.');
+          this.emit_event('chat_codeblock:marked_done', {
+            message: 'Marked thread as done.',
+            event_source: 'chatgpt_codeblock',
+            url: link_to_check,
+          });
           this._render_save_ui(this.current_url);
         };
       }

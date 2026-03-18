@@ -79,6 +79,17 @@ export class SmartChatCodeblock {
     this._init_no_webview_click_intercepts();
   }
 
+  get env() {
+    return this.plugin.env || window.smart_env;
+  }
+  emit_event(event_key, payload = {}) {
+    this.env?.events?.emit(event_key, {
+      level: 'info',
+      event_source: 'chat_codeblock',
+      ...payload,
+    });
+  }
+
   async build() {
     if (!this.container_el?.createEl) return;
 
@@ -375,8 +386,10 @@ export class SmartChatCodeblock {
 
     this.mark_done_button_el.onclick = async () => {
       await this._mark_thread_active_in_codeblock(normalized);
-      this.plugin.env?.events?.emit('chat_codeblock:marked_active', { url: normalized });
-      this.plugin.notices.show('Marked thread as active.');
+      this.emit_event('chat_codeblock:marked_active', {
+        message: 'Marked thread as active.',
+        url: normalized,
+      });
       await this._render_save_ui(this.current_url || normalized);
     };
   }
@@ -436,7 +449,11 @@ export class SmartChatCodeblock {
       if (label === 'refresh') {
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        this.plugin?.notices?.show?.('Webview not available on mobile. Use Open in browser.');
+        this.emit_event('chat_codeblock:webview_unavailable', {
+          level: 'warning',
+          message: 'Webview not available on mobile. Use Open in browser.',
+          platform: 'mobile',
+        });
         return;
       }
 
@@ -566,8 +583,10 @@ export class SmartChatCodeblock {
           if (this.webview_el) {
             try {
               this.webview_el.reload();
-              this.plugin.env?.events?.emit('webview:reloaded', { url: this.current_url });
-              this.plugin.notices.show('Webview reloaded.');
+              this.emit_event('webview:reloaded', {
+                message: 'Webview reloaded.',
+                url: this.current_url,
+              });
             } catch (_) {}
           }
         };
@@ -599,8 +618,10 @@ export class SmartChatCodeblock {
         btn.onclick = () => {
           if (this.current_url?.startsWith('http')) {
             navigator.clipboard.writeText(this.current_url);
-            this.plugin.env?.events?.emit('url:copied', { url: this.current_url });
-            this.plugin.notices.show('Copied current URL to clipboard.');
+            this.emit_event('url:copied', {
+              message: 'Copied current URL to clipboard.',
+              url: this.current_url,
+            });
           }
         };
         return;
@@ -697,8 +718,10 @@ export class SmartChatCodeblock {
       const already_saved = await this._check_if_saved?.(link_to_save);
       if (!already_saved) {
         await this._insert_link_into_codeblock(link_to_save);
-        this.plugin.env?.events?.emit('chat_codeblock:saved_thread', { url: link_to_save });
-        this.plugin.notices.show(`Auto-saved new ${this.constructor.name} thread link.`);
+        this.emit_event('chat_codeblock:saved_thread', {
+          message: `Auto-saved new ${this.constructor.name} thread link.`,
+          url: link_to_save,
+        });
       }
     }
 

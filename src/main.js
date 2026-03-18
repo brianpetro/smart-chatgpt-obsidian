@@ -1,7 +1,4 @@
-import {
-  Plugin,
-  Notice,
-  TFile} from 'obsidian';
+import {TFile} from 'obsidian';
 
 import { SmartPlugin } from 'obsidian-smart-env/smart_plugin.js';
 import { SmartChatgptCodeblock }    from './views/smart_chatgpt_codeblock.js';

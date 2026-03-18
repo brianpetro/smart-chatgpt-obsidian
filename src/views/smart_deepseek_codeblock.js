@@ -50,8 +50,11 @@ export class SmartDeepseekCodeblock extends SmartChatCodeblock {
       this._show_mark_done_button();
       this.mark_done_button_el.onclick = async () => {
         await this._mark_thread_done_in_codeblock(url);
-        this.plugin.env?.events?.emit('chat_codeblock:marked_done', { url });
-        this.plugin.notices.show('Marked thread as done.');
+        this.emit_event('chat_codeblock:marked_done', {
+          message: 'Marked thread as done.',
+          event_source: 'deepseek_codeblock',
+          url,
+        });
         this._render_save_ui(this.current_url);
       };
     }
