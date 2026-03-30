@@ -2,9 +2,10 @@ import { Setting } from 'obsidian';
 import { SmartPluginSettingsTab } from 'obsidian-smart-env';
 
 export class SmartChatgptSettingTab extends SmartPluginSettingsTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
+  constructor(app, plugin, icon='smart-chat') {
+    super(app, plugin, icon);
+    this.name = this.name.replace('ChatGPT', 'Chat');
+    if (this.env.is_pro) this.name += ' Core';
   }
 
   async render_plugin_settings(container) {
