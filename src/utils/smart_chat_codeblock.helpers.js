@@ -1,4 +1,4 @@
-import { URL } from 'url';
+// import { URL } from 'url'; // should work without import
 
 const DEFAULT_LINK_REGEX = /(https?:\/\/[^\s]+)/g;
 const MARKDOWN_LINK_REGEX = /\((https?:\/\/[^)\s]+)\)/g;

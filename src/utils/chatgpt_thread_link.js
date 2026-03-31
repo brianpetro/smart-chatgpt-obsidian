@@ -1,4 +1,4 @@
-import { URL } from 'url';
+// import { URL } from 'url'; // should work without import
 
 const SUPPORTED_DOMAINS = [
   'chatgpt.com',
