@@ -1,26 +1,15 @@
-> [!NOTE] Patch v1.1.2
-> - Added: Codex button/utility to show diffs when collapsed by default ("Load diffs" action in footer)
-> - Added: "Add thread" modal in Smart ChatGPT codeblock to insert threads into the current note
-> - Added: Kimi provider support via `smart-kimi` codeblock
+[Also in this release: suite-wide Smart Environment improvements for every Smart Plugin. Read the Substrate Update.](https://smartconnections.app/smart-plugins/substrate-update/)
 
-> [!NOTE]- Previous patches
-> > [!NOTE]- v1.1.1
-> > - Added: "Build context" button opens Context Builder scoped to the current thread
-> > - Added: date/time display for when the thread was first added to the note
-> > - Added: "Mark active" button for easier toggling between active/done states
-> > - Added: Open WebUI support via `smart-openwebui` codeblock
-> > - Added: command for inserting Smart Chat codeblock thread lists in Dataview 
-> > - Added: help icon in codeblock header (links to docs)
-> > - Improved: mobile fallback renders a list of external links when a webview cannot be shown
-> > - Fixed: thread URL inserted into a new codeblock renders/navigates correctly (extra newline)
-> > - Fixed: Grok codeblock supports updated thread URL format
-> > 
-> > All Smart Plugins:
-> > - Fixed: verified Pro plugins login should work on mobile
-> > - Fixed: settings groups now re-render when a dropdown changes (prevents stale dependent settings)
-> > - Improved: notifications modal includes a "Load more" button (beyond the default 100)
-> 
-> 
-# Smart Chat Core `v1.1`
+# Smart Chat Core `v1.3`
 
-TODO: overview + major changes here
+Smart Chat Core v1.3 is a small release with an important quality-of-life fix for note-native chat. The embedded chat block feels cleaner in everyday use, keeping the focus on staying in flow while conversations live beside the work they support.
+
+## Highlights
+
+### Cleaner chat blocks inside notes
+
+- Removed the codeblock margin that could cause erroneous arrow-up behavior after the chat codeblock.
+
+### Smoother note-native chat
+
+- A small layout fix, but one you feel often when Smart Chat is part of your daily writing and follow-up workflow.
