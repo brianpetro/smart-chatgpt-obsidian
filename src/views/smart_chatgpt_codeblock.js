@@ -1,5 +1,5 @@
 import { SmartChatCodeblock } from './smart_chat_codeblock.js';
-import { is_chatgpt_thread_link } from '../utils/chatgpt_thread_link.js';
+import { is_chatgpt_thread_link, CODEX_TASK_REGEX } from '../utils/chatgpt_thread_link.js';
 import { build_codex_diff_loader_execute_script } from '../utils/build_codex_diff_loader_execute_script.js';
 import {
   line_contains_url,
@@ -10,8 +10,6 @@ import {
   merge_chatgpt_conversation_items,
 } from '../utils/chatgpt_conversation_item.js';
 import { ChatgptThreadSuggestModal } from '../modals/add_thread_suggest_modal.js';
-
-const CODEX_TASK_PATH_REGEX = /^\/codex\/tasks\/[a-z0-9-_]+\/?$/i;
 
 const CODEX_HOSTNAMES = new Set([
   'chatgpt.com',
@@ -38,7 +36,7 @@ const is_codex_task_url = (url) => {
   try {
     const u = new URL(url);
     if (!CODEX_HOSTNAMES.has(u.hostname)) return false;
-    return CODEX_TASK_PATH_REGEX.test(u.pathname || '');
+    return CODEX_TASK_REGEX.test(u.pathname || '');
   } catch (_) {
     return false;
   }
@@ -93,9 +91,22 @@ export class SmartChatgptCodeblock extends SmartChatCodeblock {
     this._sync_add_thread_button();
   }
 
+  _platform_path_migrations(lines, changed) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (typeof line !== 'string') continue;
+      // handle Codex path migration to include /cloud/ segment.
+      if (line.includes('https://chatgpt.com/codex/tasks/')) {
+        lines[i] = line.replace('https://chatgpt.com/codex/tasks/', 'https://chatgpt.com/codex/cloud/tasks/');
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
   add_dropdown_options() {
     const new_codex_opt = this.dropdown_el.createEl('option');
-    new_codex_opt.value = 'https://chatgpt.com/codex';
+    new_codex_opt.value = 'https://chatgpt.com/codex/cloud';
     new_codex_opt.textContent = 'New Codex';
 
     // Going away

@@ -6,7 +6,7 @@ const SUPPORTED_DOMAINS = [
   'sora.chatgpt.com'
 ];
 const GPT_THREAD_REGEX = /^\/g\/[^/]+\/c\/[a-f0-9-]+\/?$/i;
-const CODEX_TASK_REGEX = /^\/codex\/tasks\/[a-z0-9-_]+\/?$/i;
+export const CODEX_TASK_REGEX = /^\/codex\/cloud\/tasks\/[a-z0-9-_]+\/?$/i;
 const CHAT_THREAD_REGEX = /^\/c\/[a-f0-9-]+\/?$/i;
 // sora 2
 const SORA_DRAFT_REGEX = /^\/d\/[a-z0-9-_]+\/?$/i;

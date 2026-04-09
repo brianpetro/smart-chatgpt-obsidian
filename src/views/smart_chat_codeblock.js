@@ -279,12 +279,16 @@ export class SmartChatCodeblock {
       const [start, end] = await this._get_codeblock_boundaries(raw_data);
       if (start < 0 || end < 0) return;
 
-      const { lines, changed } = prefix_missing_chat_lines({
+      let { lines, changed } = prefix_missing_chat_lines({
         lines: raw_data.split('\n'),
         start,
         end,
         link_regex: this.link_regex
       });
+
+      if (typeof this._platform_path_migrations === 'function') {
+        changed = this._platform_path_migrations(lines, changed);
+      }
 
       if (changed) {
         await this.plugin.app.vault.modify(this.file, lines.join('\n'));
