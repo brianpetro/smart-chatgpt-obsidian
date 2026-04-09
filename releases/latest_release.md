@@ -1,3 +1,7 @@
+> [!NOTE] Patch v1.3.1
+> - Added: mobile support
+> - Added: migration for ChatGPT codex tasks to new /cloud/ path
+
 [Also in this release: suite-wide Smart Environment improvements for every Smart Plugin. Read the Substrate Update.](https://smartconnections.app/smart-plugins/substrate-update/)
 
 # Smart Chat Core `v1.3`
