@@ -44,6 +44,9 @@ export function line_contains_url({ line, target_url, link_regex }) {
   });
 }
 
+/**
+ * @returns {Array<{ url: string, done: boolean }>} Extracted URLs with done status from the codeblock source.
+ */
 export function extract_links_from_source({ codeblock_source, link_regex }) {
   const lines = String(codeblock_source || '').split('\n');
   const result = [];

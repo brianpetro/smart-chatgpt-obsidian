@@ -18,12 +18,12 @@ const HELP_DOC_URL = 'https://smartconnections.app/smart-chat/codeblock/';
 const footer_button_labels = () => [
   'Refresh',
   'Build context',
-  'Open in browser',
+  'Open',
   'Copy link',
   'Grow'
 ];
 
-const MOBILE_HINT_TEXT = 'Webview unavailable on mobile. Use Open + Copy.';
+const MOBILE_HINT_TEXT = 'Webview unavailable on mobile. Use "Open" to access the selected chat.';
 
 export class SmartChatCodeblock {
   constructor({ plugin, file, line_start, line_end, container_el, source, ctx }) {
@@ -110,6 +110,14 @@ export class SmartChatCodeblock {
     this.current_url = this.initial_link;
     this.last_detected_url = this.initial_link;
 
+    // If no links AND mobile then simple message UI notifying there are no threads saved to the Smart Chat codeblock
+    if (this._is_mobile && this.links.length === 0) {
+      const message_el = this.container_el.createEl('div', {
+        cls: 'sc-no-threads-message',
+        text: 'No threads saved in this Smart Chat codeblock. Use the desktop app to add threads here.'
+      });
+      return;
+    }
     this._build_standard_ui();
 
     if (this.webview_el && this.current_url?.startsWith('http')) {
@@ -454,8 +462,8 @@ export class SmartChatCodeblock {
         ev.preventDefault();
         ev.stopImmediatePropagation();
         this.emit_event('chat_codeblock:webview_unavailable', {
-          level: 'warning',
-          message: 'Webview not available on mobile. Use Open in browser.',
+          level: 'info',
+          message: 'Webview not available on mobile. Use "Open" to access the selected chat.',
           platform: 'mobile',
         });
         return;
@@ -560,7 +568,8 @@ export class SmartChatCodeblock {
   }
 
   _render_mobile_hint() {
-    this.mobile_hint_el = this.dropdown_container_el?.createEl('div', {
+    const bottom_row_el = this.container_el.createEl('div', { cls: 'sc-bottom-row' });
+    this.mobile_hint_el = bottom_row_el?.createEl('div', {
       cls: 'sc-mobile-hint',
       text: MOBILE_HINT_TEXT
     });
@@ -605,9 +614,12 @@ export class SmartChatCodeblock {
         return;
       }
 
-      if (label === 'Open in browser') {
+      if (label === 'Open') {
         this.open_browser_button_el = btn;
         btn.classList.add('sc-footer-open');
+        // add aria-label for accessibility
+        btn.setAttribute('aria-label', 'Open the selected chat.');
+
         btn.onclick = () => {
           if (this.current_url && this.current_url.startsWith('http')) {
             window.open(this.current_url, '_blank');
@@ -673,6 +685,8 @@ export class SmartChatCodeblock {
 
     for (const link_obj of this.links || []) {
       const option_el = this.dropdown_el.createEl('option');
+      // add is-thread class
+      option_el.classList.add('sc-is-thread');
       option_el.value = link_obj.url;
       const label = this._get_dropdown_label(link_obj.url);
       option_el.textContent = link_obj.done ? ('✓ ' + label) : label;

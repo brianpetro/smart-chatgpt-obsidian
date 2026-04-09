@@ -16,6 +16,7 @@
   gap: 8px;
   margin-bottom: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 /* Help icon button in top row */
@@ -52,6 +53,8 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  align-self: start;
 }
 
 /* Status text on top row */
@@ -185,3 +188,10 @@ LEAVING TEMPORARILY IN CASE NOTICING THE ISSUE AGAIN */
 /* .markdown-source-view.mod-cm6 .cm-content > [contenteditable=false]:has(.sc-dynamic-codeblock) {
   contain: layout !important;
 } */
+
+/* Hide "New thread" options on mobile (v2 should replace with opening new externally) */
+.sc-dynamic-codeblock.sc-is-mobile.sc-no-webview {
+  option:not(.sc-is-thread) {
+    display: none;
+  }
+}
