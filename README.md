@@ -7,7 +7,7 @@ Keep AI threads with the notes they belong to<br>
 Works with the AI you already use. Keep chats saved to relevant notes.
 </p>
 
-![](assets/chat-codeblock-platforms.gif)
+![](/assets/chat-codeblock-platforms.gif)
 
 > [!QUESTION] **Why let useful chats become orphaned browser tabs?**
 > Put the thread beside the project, meeting, research note, or draft it belongs to.
