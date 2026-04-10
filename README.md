@@ -1,108 +1,76 @@
-> [!INFO] 2025-12-11 this page is a WIP, see https://smartconnections.app/smart-chat
+# Smart Chat (fmr. Smart ChatGPT)
 
 <h2 align="center">
-Conversations stay with your notes<br>
+Keep AI threads with the notes they belong to<br>
 </h2>
+<p align="center">
+Works with the AI you already use. Keep chats saved to relevant notes.
+</p>
 
-> [!QUESTION] **Why juggle browser tabs or copied prompts?**
-> Keep conversations inside Obsidian with Smart Chat and let your vault supply the context.
+![](assets/chat-codeblock-platforms.gif)
+
+> [!QUESTION] **Why let useful chats become orphaned browser tabs?**
+> Put the thread beside the project, meeting, research note, or draft it belongs to.
 
 > [!WARNING] **The Problem**
-> Switching between external chat tools and your notes breaks focus, leaks context, and risks sending private data to the wrong place.
+> Good chats drift away from the notes that matter.
+
+> [!NOTE] **What Smart Chat does**
+> Smart Chat keeps conversations inside your notes. The Chat codeblock automatically saves your chats with AI in the note. Works with ChatGPT, Claude, Gemini, Grok and more. No API key required.
 
 > [!SUCCESS] **What success looks like**
-> Stay in flow: start a thread, pull in notes with `@`, review context before sending, and answer follow-ups without leaving Obsidian.
+> Start a thread from the note, resume it later from the same note, keep chats with your work, and close the loop by marking threads done.
 
-> [!FAILURE] **The cost of doing nothing**
-> Context keeps leaking across tools. You lose time re-reading notes, copy/pasting prompts, and second-guessing what was sent to which provider.
 
-# Smart Chat
+## Quick start
 
-Smart Chat keeps conversations inside your notes by embedding web chat apps directly in codeblocks and tracking thread URLs alongside your work. Use Smart Chat Pro when you need API adapters, routing, and context workflows beyond embedded chat.
-
-![](./assets/smart-chatgpt-getting_started.gif)
-
-## What Smart Chat does
-- Embed provider chat UIs in codeblocks so conversations stay with the note they belong to.
-- Save thread URLs and status (`chat-active`, `chat-done`) directly in the note for tracking.
-- Provide a sidebar **Smart ChatGPT** view for quick access to ChatGPT in Obsidian.
-- Offer optional Smart Chat Pro workflows for API-based chat and routing.
-
-## Core: Smart ChatGPT (embedded chat)
-- Provider codeblocks that render embedded chat UIs directly inside notes.
-- Thread URL tracking with `chat-active` and `chat-done` fields saved in your notes.
-- Dataview dashboards for in-progress and completed threads.
-- **Smart ChatGPT** sidebar view for quick access without leaving your current file.
-
-## Optional: Smart Chat Pro (API routing)
-- API adapters, per-thread routing, and context tooling via Smart Environment actions.
-- Explicit routing: choose which threads talk to cloud providers vs local models.
-- Review context before sending so you decide what leaves your vault.
-
-## Quick start (core)
 > [!TLDR] 3 steps
 > 1. Install **Smart ChatGPT** from Obsidian Community plugins and enable it.
-> 2. Run a command like **Insert OpenAI ChatGPT codeblock** from the command palette.
-> 3. Chat in the embedded view; Smart Chat saves the thread URL and status in the note.
-
-## Smart Chat Pro API flow
-1. Start a new thread and set the system prompt for the task at hand.
-2. Pull in notes with `@` to review and edit context before sending.
-3. Route responses per-thread to Ollama or a Smart Chat Pro adapter depending on privacy or latency needs.
-4. Trigger Smart Environment actions (like Smart Context) when you need refreshed context or links.
-
-### Pro: provider routing and adapters
-- Smart Chat Pro ships adapters for OpenAI, Anthropic, Gemini, Azure OpenAI, and more through the Smart Environment.
-- Routing is explicit: each thread can target a different provider or stay on Ollama. Context only leaves your machine when you choose a cloud adapter.
-- Settings live under **Smart Chat Pro** with clear API key inputs and model selectors per provider.
-
-## Built for you
-> Smart Chat started as a way to keep conversations and context together. The Obsidian community has helped shape it into a flexible interface for local-first AI workflows.
-
-- Keep private notes local by default; switch to cloud providers only when you choose.
-- Chat UI matches the Connections storytelling so onboarding feels consistent across Smart Plugins.
+> 2. Insert a provider codeblock from the command palette, such as **Insert OpenAI ChatGPT codeblock**.
+> 3. Chat in the embedded view. Smart Chat saves the thread URL back into the note so you can resume later.
 
 
-![](./assets/smart-chatgpt-getting_started.gif)
+## Flow
 
-> [!NOTE] Stop losing your conversations!
-> Hey there! I'm 🌴 Brian. I found myself constantly juggling browser tabs for different AI chats while working on my notes. I'd lose track of important conversation threads and waste time trying to map them back to the right project.
->
-> This plugin is my solution. It brings your AI chats right into the Obsidian notes where they belong. It's built to create a seamless, asynchronous workflow with AI, making sure your valuable discussions are always organized and right where you need them.
-### Key features
-- 💬 **Embed Multiple AIs**: Works with ChatGPT, Anthropic Claude, Google Gemini, Perplexity, DeepSeek, xAI Grok, Google AI Studio, and Open WebUI.
-- 🔗 **Automatic Link Saving**: Conversation URLs save back into your note.
-- ✅ **Simple Task Management**: Mark conversations as "active" or "done".
-- 📂 **Multi-Thread Management**: Switch between threads inside a note.
-- 📊 **Dataview Integration**: Build dashboards from `chat-active` and `chat-done` fields.
+1. Add a provider codeblock to the note where the thread belongs.
+2. Start or resume the conversation inside the embedded chat UI.
+3. Let Smart Chat save the thread URL directly into the note.
+4. Mark the thread done when the work is complete, or surface it later with Dataview.
 
-### Getting started with codeblocks
-1. Install **Smart ChatGPT** from Obsidian Community plugins.
-2. Insert a codeblock from the command palette (e.g., `Insert OpenAI ChatGPT codeblock`).
-3. Start chatting; the plugin detects thread URLs and saves them to the block.
 
-#### Examples
+## Getting started with codeblocks
+
+### Minimal example
 ````md
 ```smart-chatgpt
 ```
 ````
 
-When you start a conversation, the plugin automatically updates the codeblock with the new thread's URL, marking it as `chat-active`.
-
+### Example of a saved block
 ````md
 ```smart-chatgpt
-chat-active:: 1709719305 https://chatgpt.com/c/some-new-thread
+chat-active:: 1767302492 https://chatgpt.com/c/6956e559-8060-8329-8150-7167e477c05a
+chat-done:: 1767132305 https://chatgpt.com/c/69544c91-0c78-832e-8e49-d21049a33e51
 ```
 ````
 
-### Managing Conversations
+### Supported provider codeblocks
+| Codeblock | Provider |
+| --- | --- |
+| `smart-chatgpt` | ChatGPT (also recognizes Codex and Sora links) |
+| `smart-claude` | Claude |
+| `smart-gemini` | Gemini |
+| `smart-grok` | Grok |
+| `smart-perplexity` | Perplexity |
+| `smart-deepseek` | DeepSeek |
+| `smart-aistudio` | Google AI Studio |
+| `smart-openwebui` | Open WebUI |
+| `smart-kimi` | Kimi |
 
-* **Mark as Done**: When you're finished with a conversation, click the **“Mark Done”** button. The plugin will update the line to `chat-done`. This is great for tracking tasks.
-* **Switching Threads**: If you have multiple threads in one codeblock, a dropdown menu appears, letting you easily switch between them. Done threads are marked with a ✓.
+## Dataview snippets
 
-#### Dataview snippets
+Because Smart Chat stores thread state directly in your notes, Dataview can turn your vault into an async dashboard.
 
-Because the plugin saves thread status directly in your notes as `chat-active` or `chat-done`, you can use [Dataview](https://github.com/blacksmithgu/obsidian-dataview) to create powerful dashboards.
 ````md
 # In Progress
 ```dataview
@@ -115,52 +83,21 @@ SORT file.mtime DESC
 ````md
 # Completed
 ```dataview
-LIST length(file.chat-done) + " completed"
+LIST WITHOUT ID file.link
 WHERE chat-done
-SORT length(file.chat-done) DESC
+SORT file.mtime DESC
 ```
 ````
 
-## Codeblocks for Supported AI Chat Services
-
-Use a specific codeblock for each service:
-
-| Codeblock           | Service              |
-| ------------------- | -------------------- |
-| `smart-chatgpt`     | **OpenAI ChatGPT**   |
-| `smart-claude`      | **Anthropic Claude** |
-| `smart-gemini`      | **Google Gemini**    |
-| `smart-deepseek`    | **DeepSeek**         |
-| `smart-perplexity`  | **Perplexity**       |
-| `smart-grok`        | **xAI Grok**         |
-| `smart-aistudio`    | **Google AI Studio** |
-| `smart-openwebui`   | **Open WebUI**       |
-
-### Sidebar Smart ChatGPT view
-- Open the **Smart ChatGPT** view from the command palette to keep ChatGPT available in the sidebar.
-- Use **Refresh** to reload the session or **Copy URL** to capture the current thread link.
-
-### FAQ
+## FAQ
 - **Claude won't sign in**: Enable Obsidian's **Web viewer** core plugin, log in via Web viewer, then refresh the embedded chat.
 - **Google sign-in errors**: Use Web viewer to complete authentication, then return to the note and refresh.
-- **AI Studio thread link isn't saved**: After sending the first message, click **Save** in AI Studio so Smart Chat can capture the URL.
+- **Do I need an API key?** No. Use the web UIs you already use.
+- **Where does my data live?** The codeblock stores thread links in your notes.
+- **Does Smart Chat work on mobile?** The saved thread links are accessible on mobile, but the full embedded web UI experience depends on Obsidian desktop webview support.
 - **Can I use Open WebUI (Ollama) with Smart Chat?** Yes. Use the `smart-openwebui` codeblock and set the base URL in **Settings → Smart ChatGPT → Open WebUI base URL**.
-- **Where does my data live?** Core Smart Chat embeds provider web apps in Obsidian and stores thread links in your notes. Smart Chat Pro sends content to providers you explicitly configure.
-- **How do I switch models?** For core codeblocks, use the provider's UI. Smart Chat Pro adds per-thread model selection in its settings UI.
-- **Does Smart Chat work with Smart Connections?** Yes. Smart Connections handles discovery across your vault, while Smart Chat handles conversations and thread tracking. Both are part of the Smart Plugins ecosystem.
 
-## Part of the Smart Ecosystem
-
-Smart ChatGPT is a proud member of the [Smart Plugins](https://smartconnections.app) family, which includes the flagship **[Smart Connections](https://obsidian.md/plugins?id=smart-connections)** plugin.
-
-Our mission is to build user-aligned, privacy-first tools that empower you to think better and achieve your goals. We believe in software that is:
-
-* 🔐 **Private & Local-First**: Your data stays with you.
-* 🌐 **Open-Source**: Transparent and community-driven.
-* ⚔️ **Mission-Driven**: Built to empower you, not to profit from your data.
-
-Come for the tools, stay for the community and our shared vision of thriving with AI.
 
 ---
 
-Developed by 🌴 Brian | [smartconnections.app](https://smartconnections.app)
+Developed by Brian | [smartconnections.app](https://smartconnections.app)
