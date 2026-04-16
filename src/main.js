@@ -202,9 +202,4 @@ export default class SmartChatgptPlugin extends SmartPlugin {
     });
     this["open_" + method_name] = () => SmartChatGPTView.open(this.app.workspace);
   }
-
-  show_release_notes() {
-    return this.ReleaseNotesView.open(this.app.workspace, this.manifest.version);
-  }
-
 }
