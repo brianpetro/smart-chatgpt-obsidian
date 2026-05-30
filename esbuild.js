@@ -23,7 +23,7 @@ build_plugin({
     'url',
   ],
   plugin_id: 'smart-chatgpt',
-  styles_path: path.join(process.cwd(), 'src', 'styles.css'),
+  styles_path: path.join(process.cwd(), 'styles.css'),
 }).catch((err) => {
   console.error('Error in build process:', err);
   process.exit(1);
