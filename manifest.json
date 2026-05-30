@@ -1,7 +1,7 @@
 {
   "id": "smart-chatgpt",
   "name": "Smart Chat (fmr. Smart ChatGPT)",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "minAppVersion": "1.8.0",
   "description": "Save AI conversations directly inside the notes they belong to, embedding chat blocks that store thread URLs and status so you can resume or mark threads done. Use ChatGPT, Claude, Gemini, Grok and more without an API key, and surface saved threads with Dataview.",
   "author": "🌴 Brian",
