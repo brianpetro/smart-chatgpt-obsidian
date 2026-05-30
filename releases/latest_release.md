@@ -2,7 +2,7 @@
 
 # Smart Chat Core `v1.3`
 
-> [!NOTE] What's new in `v1.3.2`
+> [!NOTE] What's new in `v1.3.3`
 > - Updated Smart Environment to `v2.4.6` for handling Obsidian API changes
 
 Smart Chat Core v1.3 is a small release with an important quality-of-life fix for note-native chat. The embedded chat block feels cleaner in everyday use, keeping the focus on staying in flow while conversations live beside the work they support.
