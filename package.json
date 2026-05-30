@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "node esbuild.js",
+    "build-dev": "node --env-file=.env esbuild.js",
     "release": "node release.js"
   },
   "dependencies": {
@@ -14,12 +15,8 @@
     "obsidian-smart-env": "file:../obsidian-smart-env"
   },
   "devDependencies": {
-    "archiver": "^7.0.1",
     "ava": "^6.4.1",
-    "axios": "^1.7.9",
-    "dotenv": "^16.4.5",
-    "esbuild": "^0.25.9",
-    "readline": "^1.3.0"
+    "esbuild": "^0.25.9"
   },
   "workspaces": [
     "../obsidian-smart-env"
