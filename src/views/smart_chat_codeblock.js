@@ -191,7 +191,8 @@ export class SmartChatCodeblock {
       this.webview_el.setAttribute('useragent', DEFAULT_WEBVIEW_USERAGENT);
       this.webview_el.setAttribute('webpreferences', DEFAULT_WEBVIEW_PREFERENCES);
       this.webview_el.style.setProperty('--sc-webview-height', webview_height + 'px');
-      handle_chatgpt_threads_list_detection(this);
+      // TEMP disable because getting rate limit noticies
+      // handle_chatgpt_threads_list_detection(this);
 
       const initial_src = this.current_url || this.initial_link || this._FALLBACK_URL;
       if (initial_src?.startsWith('http')) {
