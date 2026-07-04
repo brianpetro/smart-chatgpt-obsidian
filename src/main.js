@@ -30,19 +30,24 @@ const DEFAULT_SETTINGS = {
 
 export default class SmartChatgptPlugin extends SmartPlugin {
   ReleaseNotesView = ReleaseNotesView;
+  ChatSettingsTab = SmartChatgptSettingTab;
   get env () {
     return window?.smart_env;
   }
   /** @type {SmartChatgptPluginSettings} */
   settings = DEFAULT_SETTINGS;
 
+  get smart_env_config() {
+    return {}
+  }
+
   async onload() {
     this.app.workspace.onLayoutReady(this.initialize.bind(this)); // initialize when layout is ready
-    this.SmartEnv.create(this, {});
+    this.SmartEnv.create(this, this.smart_env_config);
     await this.loadSettings();
 
     this.register_all();
-    this.addSettingTab(new SmartChatgptSettingTab(this.app, this));
+    this.addSettingTab(new this.ChatSettingsTab(this.app, this));
     this.register_chatgpt_view();
   }
   async initialize() {
