@@ -10,6 +10,7 @@ import { SmartGrokCodeblock }       from './views/smart_grok_codeblock.js';
 import { SmartAistudioCodeblock }   from './views/smart_aistudio_codeblock.js';
 import { SmartOpenWebuiCodeblock }  from './views/smart_openwebui_codeblock.js';
 import { SmartKimiCodeblock }       from './views/smart_kimi_codeblock.js';
+import {smart_env_config} from '../smart_env.config.js';
 
 // DEPRECATED view from sc-obsidian
 import { SmartChatGPTView } from "./views/sc_chatgpt.obsidian.js";
@@ -38,7 +39,7 @@ export default class SmartChatgptPlugin extends SmartPlugin {
   settings = DEFAULT_SETTINGS;
 
   get smart_env_config() {
-    return {}
+    return {...smart_env_config};
   }
 
   async onload() {
