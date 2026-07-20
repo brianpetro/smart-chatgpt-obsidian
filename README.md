@@ -42,13 +42,13 @@ Works with the AI you already use. Keep chats saved to relevant notes.
 
 ### Minimal example
 ````md
-```smart-chatgpt
+```smart-chat
 ```
 ````
 
 ### Example of a saved block
 ````md
-```smart-chatgpt
+```smart-chat
 chat-active:: 1767302492 https://chatgpt.com/c/6956e559-8060-8329-8150-7167e477c05a
 chat-done:: 1767132305 https://chatgpt.com/c/69544c91-0c78-832e-8e49-d21049a33e51
 ```
