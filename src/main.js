@@ -44,10 +44,10 @@ export default class SmartChatgptPlugin extends SmartPlugin {
 
   async onload() {
     this.app.workspace.onLayoutReady(this.initialize.bind(this)); // initialize when layout is ready
+    this.register_all();
     this.SmartEnv.create(this, this.smart_env_config);
     await this.loadSettings();
 
-    this.register_all();
     this.addSettingTab(new this.ChatSettingsTab(this.app, this));
     this.register_chatgpt_view();
   }
