@@ -55,17 +55,18 @@ chat-done:: 1767132305 https://chatgpt.com/c/69544c91-0c78-832e-8e49-d21049a33e5
 ````
 
 ### Supported provider codeblocks
-| Codeblock | Provider |
-| --- | --- |
-| `smart-chatgpt` | ChatGPT (also recognizes Codex and Sora links) |
-| `smart-claude` | Claude |
-| `smart-gemini` | Gemini |
-| `smart-grok` | Grok |
-| `smart-perplexity` | Perplexity |
-| `smart-deepseek` | DeepSeek |
-| `smart-aistudio` | Google AI Studio |
-| `smart-openwebui` | Open WebUI |
-| `smart-kimi` | Kimi |
+| Codeblock          | Provider                                           |
+| ------------------ | -------------------------------------------------- |
+| `smart-chat`       | All providers and API chat (Pro).                  |
+| `smart-chatgpt`    | ChatGPT, including recognized Codex and Sora links |
+| `smart-claude`     | Claude                                             |
+| `smart-gemini`     | Gemini                                             |
+| `smart-grok`       | Grok                                               |
+| `smart-perplexity` | Perplexity                                         |
+| `smart-deepseek`   | DeepSeek                                           |
+| `smart-aistudio`   | Google AI Studio                                   |
+| `smart-openwebui`  | Open WebUI                                         |
+| `smart-kimi`       | Kimi                                               |
 
 ## Dataview snippets
 
