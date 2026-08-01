@@ -29,6 +29,8 @@ Works with the AI you already use. Keep chats saved to relevant notes.
 > 2. Insert a provider codeblock from the command palette, such as **Insert OpenAI ChatGPT codeblock**.
 > 3. Chat in the embedded view. Smart Chat saves the thread URL back into the note so you can resume later.
 
+![chat-codeblock-native-selector-core-crop-highlighted-desktop-2026-07-27](images/chat-codeblock-native-selector-core-crop-highlighted-desktop-2026-07-27.png)
+
 
 ## Flow
 
@@ -36,6 +38,8 @@ Works with the AI you already use. Keep chats saved to relevant notes.
 2. Start or resume the conversation inside the embedded chat UI.
 3. Let Smart Chat save the thread URL directly into the note.
 4. Mark the thread done when the work is complete, or surface it later with Dataview.
+
+![chat-codeblock-chatgpt-workflow-chatgpt-active-2026-01-04](images/chat-codeblock-chatgpt-workflow-chatgpt-active-2026-01-04.png)
 
 
 ## Getting started with codeblocks
@@ -53,6 +57,8 @@ chat-active:: 1767302492 https://chatgpt.com/c/6956e559-8060-8329-8150-7167e477c
 chat-done:: 1767132305 https://chatgpt.com/c/69544c91-0c78-832e-8e49-d21049a33e51
 ```
 ````
+
+![chat-codeblock-threads-grouped-menu-pro-crop-desktop-2026-07-27](images/chat-codeblock-threads-grouped-menu-pro-crop-desktop-2026-07-27.png)
 
 ### Supported provider codeblocks
 | Codeblock          | Provider                                           |
