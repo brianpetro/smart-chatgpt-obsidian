@@ -16,7 +16,7 @@ Works with the AI you already use. Keep chats saved to relevant notes.
 > Good chats drift away from the notes that matter.
 
 > [!NOTE] **What Smart Chat does**
-> Smart Chat keeps conversations inside your notes. The Chat codeblock automatically saves your chats with AI in the note. Works with ChatGPT, Claude, Gemini, Grok and more. No API key required.
+> Smart Chat keeps provider bookmarks and user-owned thread state with the notes they belong to. After a provider creates a recognized durable conversation URL, the codeblock can save that URL in the note. Works with ChatGPT, Claude, Gemini, Grok and more. No API key required.
 
 > [!SUCCESS] **What success looks like**
 > Start a thread from the note, resume it later from the same note, keep chats with your work, and close the loop by marking threads done.
@@ -25,18 +25,18 @@ Works with the AI you already use. Keep chats saved to relevant notes.
 ## Quick start
 
 > [!TLDR] 3 steps
-> 1. Install **Smart ChatGPT** from Obsidian Community plugins and enable it.
+> 1. On Obsidian desktop, install **Smart ChatGPT** from Obsidian Community plugins and enable it.
 > 2. Insert a provider codeblock from the command palette, such as **Insert OpenAI ChatGPT codeblock**.
-> 3. Chat in the embedded view. Smart Chat saves the thread URL back into the note so you can resume later.
+> 3. Chat in the embedded view. After the provider creates a recognized durable conversation URL, confirm that Smart Chat saved the thread URL in the note before relying on it to resume later.
 
-![chat-codeblock-native-selector-core-crop-highlighted-desktop-2026-07-27](images/chat-codeblock-native-selector-core-crop-highlighted-desktop-2026-07-27.png)
+![[chat-codeblock-native-selector-core-crop-highlighted-desktop-2026-07-27.png]]
 
 
 ## Flow
 
 1. Add a provider codeblock to the note where the thread belongs.
 2. Start or resume the conversation inside the embedded chat UI.
-3. Let Smart Chat save the thread URL directly into the note.
+3. After the provider creates a recognized durable conversation URL, confirm that Smart Chat saved it in the note.
 4. Mark the thread done when the work is complete, or surface it later with Dataview.
 
 ![chat-codeblock-chatgpt-workflow-chatgpt-active-2026-01-04](images/chat-codeblock-chatgpt-workflow-chatgpt-active-2026-01-04.png)
@@ -44,13 +44,13 @@ Works with the AI you already use. Keep chats saved to relevant notes.
 
 ## Getting started with codeblocks
 
-### Minimal example
+### Minimal example: ChatGPT with Core
 ````md
-```smart-chat
+```smart-chatgpt
 ```
 ````
 
-### Example of a saved block
+### Example of a saved universal block (Smart Chat Pro)
 ````md
 ```smart-chat
 chat-active:: 1767302492 https://chatgpt.com/c/6956e559-8060-8329-8150-7167e477c05a
